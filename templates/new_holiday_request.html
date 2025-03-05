@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <h2>Submit a New Holiday Request</h2>
+  <form method="POST" action="{{ url_for('main.new_holiday_request') }}">
+    <div class="mb-3">
+      <label for="start_date" class="form-label">Start Date</label>
+      <input type="date" class="form-control" id="start_date" name="start_date" required>
+    </div>
+    <div class="mb-3">
+      <label for="end_date" class="form-label">End Date</label>
+      <input type="date" class="form-control" id="end_date" name="end_date" required>
+    </div>
+    <div class="mb-3">
+      <label for="request_type" class="form-label">Request Type</label>
+      <select class="form-select" id="request_type" name="request_type" required>
+        <option value="vacation">Vacation</option>
+        <option value="time_compensation">Time Compensation</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit Request</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <h2>Your Holiday Requests</h2>
+  {% if requests %}
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Type</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td>{{ req.id }}</td>
+          <td>{{ req.start_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ req.end_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ req.request_type }}</td>
+          <td>{{ req.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No holiday requests found.</p>
+  {% endif %}
+  <a href="{{ url_for('main.new_holiday_request') }}" class="btn btn-primary">Submit New Request</a>
+</div>
+{% endblock %}

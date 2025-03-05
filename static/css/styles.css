@@ -1,0 +1,4 @@
+/* Override the default Bootstrap primary color with burgundy. */
+:root {
+  --bs-primary: #800020; /* Burgundy red */
+}
