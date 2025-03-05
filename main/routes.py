@@ -7,7 +7,7 @@ from flask_mail import Message
 import io
 import pandas as pd
 
-# Define the Blueprint before using it in any routes.
+# Define the Blueprint before any routes are declared.
 main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
@@ -79,6 +79,15 @@ def update_request(request_id, action):
     if action not in ['approve', 'reject']:
         flash('Invalid action.', 'danger')
         return redirect(url_for('main.approval_requests'))
+    
+    if action == 'approve':
+        # Calculate the number of days (inclusive)
+        requested_days = (holiday_request.end_date - holiday_request.start_date).days + 1
+        if holiday_request.user.time_off_balance < requested_days:
+            flash('Insufficient time off balance to approve this request.', 'danger')
+            return redirect(url_for('main.approval_requests'))
+        # Deduct the requested days from the user's balance
+        holiday_request.user.time_off_balance -= requested_days
     
     holiday_request.status = 'approved' if action == 'approve' else 'rejected'
     db.session.commit()

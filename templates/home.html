@@ -2,6 +2,9 @@
 {% block content %}
 <div class="text-center">
   <h2>Welcome to the Holiday Approval App!</h2>
+  {% if current_user.role == 'employee' %}
+    <p>Your current time off balance is: {{ current_user.time_off_balance }} days</p>
+  {% endif %}
   <p>This is the home page. More features will be added soon.</p>
   <button type="button" class="btn btn-primary">Test Button</button>
 </div>
