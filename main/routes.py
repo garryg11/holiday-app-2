@@ -1,13 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, send_file
+from flask import Blueprint, render_template, jsonify, current_app, flash, redirect, url_for, send_file, request
 from flask_login import login_required, current_user
 from models import HolidayRequest
+from datetime import timedelta, datetime, date
 from extensions import db, mail
-from datetime import datetime
 from flask_mail import Message
 import io
 import pandas as pd
 
-# Define the Blueprint before any routes are declared.
 main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
@@ -15,24 +14,40 @@ main_bp = Blueprint('main', __name__)
 def home():
     return render_template('home.html')
 
+@main_bp.route('/calendar')
+@login_required
+def calendar():
+    # Simple suggestion logic (can be modified or removed)
+    suggestion = ""
+    if current_user.role == 'employee':
+        if current_user.time_off_balance >= 10:
+            suggestion = "Consider planning a vacation next month!"
+        else:
+            suggestion = "Your time off balance is low."
+    else:
+        suggestion = "View the overall leave calendar for your team."
+    return render_template('calendar.html', suggestion=suggestion)
+
 @main_bp.route('/holiday_requests')
 @login_required
 def holiday_requests():
-    # Employees see only their own requests; other roles see all requests.
+    # Employees see only their own requests; others see all.
     if current_user.role == 'employee':
-        requests = HolidayRequest.query.filter_by(user_id=current_user.id).all()
+        requests_list = HolidayRequest.query.filter_by(user_id=current_user.id).all()
     else:
-        requests = HolidayRequest.query.all()
-    return render_template('holiday_requests.html', requests=requests)
+        requests_list = HolidayRequest.query.all()
+    return render_template('holiday_requests.html', requests=requests_list)
 
 @main_bp.route('/holiday_request/new', methods=['GET', 'POST'])
 @login_required
 def new_holiday_request():
+    if current_user.role != 'employee':
+        flash("Only employees can submit new holiday requests.", "danger")
+        return redirect(url_for('main.calendar'))
     if request.method == 'POST':
         start_date_str = request.form.get('start_date')
         end_date_str = request.form.get('end_date')
         request_type = request.form.get('request_type')
-        # Convert dates from string to date objects
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
@@ -42,7 +57,6 @@ def new_holiday_request():
         if end_date < start_date:
             flash('End date cannot be before start date.', 'danger')
             return redirect(url_for('main.new_holiday_request'))
-        # Create and add the new holiday request
         holiday_request = HolidayRequest(
             user_id=current_user.id,
             start_date=start_date,
@@ -61,17 +75,16 @@ def new_holiday_request():
 def approval_requests():
     if current_user.role not in ['supervisor', 'manager', 'admin']:
         flash('Access denied: you do not have permission to view this page.', 'danger')
-        return redirect(url_for('main.home'))
-    # Get only pending requests
-    requests = HolidayRequest.query.filter_by(status='pending').all()
-    return render_template('approval_requests.html', requests=requests)
+        return redirect(url_for('main.calendar'))
+    pending_requests = HolidayRequest.query.filter_by(status='pending').all()
+    return render_template('approval_requests.html', requests=pending_requests)
 
 @main_bp.route('/approval_request/<int:request_id>/<action>')
 @login_required
 def update_request(request_id, action):
     if current_user.role not in ['supervisor', 'manager', 'admin']:
         flash('Access denied: you do not have permission to perform this action.', 'danger')
-        return redirect(url_for('main.home'))
+        return redirect(url_for('main.calendar'))
     holiday_request = HolidayRequest.query.get_or_404(request_id)
     if holiday_request.status != 'pending':
         flash('This request has already been processed.', 'warning')
@@ -79,20 +92,14 @@ def update_request(request_id, action):
     if action not in ['approve', 'reject']:
         flash('Invalid action.', 'danger')
         return redirect(url_for('main.approval_requests'))
-    
     if action == 'approve':
-        # Calculate the number of days (inclusive)
         requested_days = (holiday_request.end_date - holiday_request.start_date).days + 1
         if holiday_request.user.time_off_balance < requested_days:
             flash('Insufficient time off balance to approve this request.', 'danger')
             return redirect(url_for('main.approval_requests'))
-        # Deduct the requested days from the user's balance
         holiday_request.user.time_off_balance -= requested_days
-    
     holiday_request.status = 'approved' if action == 'approve' else 'rejected'
     db.session.commit()
-    
-    # Send email notification to the user who submitted the request
     subject = f"Holiday Request {action.capitalize()}d"
     sender = current_app.config['MAIL_USERNAME']
     recipients = [holiday_request.user.email]
@@ -104,26 +111,18 @@ def update_request(request_id, action):
     )
     msg = Message(subject, sender=sender, recipients=recipients, body=msg_body)
     mail.send(msg)
-    
     flash(f'Request {action}d successfully. An email notification has been sent.', 'success')
     return redirect(url_for('main.approval_requests'))
 
 @main_bp.route('/export_reports')
 @login_required
 def export_reports():
-    """
-    Export holiday requests as an Excel file.
-    - Employees export only their own requests.
-    - Other roles export all requests.
-    """
     if current_user.role == 'employee':
-        requests = HolidayRequest.query.filter_by(user_id=current_user.id).all()
+        requests_list = HolidayRequest.query.filter_by(user_id=current_user.id).all()
     else:
-        requests = HolidayRequest.query.all()
-
-    # Build a list of dictionaries representing each holiday request
+        requests_list = HolidayRequest.query.all()
     data = []
-    for req in requests:
+    for req in requests_list:
         data.append({
             "Request ID": req.id,
             "User Email": req.user.email,
@@ -133,20 +132,110 @@ def export_reports():
             "Status": req.status,
             "Comment": req.comment or ""
         })
-    
-    # Create a Pandas DataFrame
     df = pd.DataFrame(data)
-    
-    # Write the DataFrame to an Excel file in memory
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Holiday Requests')
     output.seek(0)
-    
-    # Send the file to the user for download using the 'download_name' parameter
     return send_file(
         output,
         download_name="holiday_requests.xlsx",
         as_attachment=True,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+@main_bp.route('/api/calendar_events')
+@login_required
+def api_calendar_events():
+    events = []
+    approved_requests = HolidayRequest.query.filter_by(status='approved').all()
+    for req in approved_requests:
+        events.append({
+            "title": f"{req.user.email} - {req.request_type}",
+            "start": req.start_date.isoformat(),
+            "end": (req.end_date + timedelta(days=1)).isoformat()
+        })
+    return jsonify(events=events)
+
+@main_bp.route('/currently_on_leave')
+@login_required
+def currently_on_leave():
+    today = date.today()
+    ongoing_requests = HolidayRequest.query.filter(
+        HolidayRequest.status == 'approved',
+        HolidayRequest.start_date <= today,
+        HolidayRequest.end_date >= today
+    ).all()
+    return render_template('currently_on_leave.html', ongoing_requests=ongoing_requests)
+
+@main_bp.route('/holiday_request/edit/<int:request_id>', methods=['GET', 'POST'])
+@login_required
+def edit_holiday_request(request_id):
+    holiday_request = HolidayRequest.query.get_or_404(request_id)
+    if current_user.role != 'employee' or holiday_request.user_id != current_user.id:
+        flash("You are not authorized to edit this request.", "danger")
+        return redirect(url_for('main.holiday_requests'))
+    if holiday_request.status != 'pending':
+        flash("Only pending requests can be edited.", "warning")
+        return redirect(url_for('main.holiday_requests'))
+    if request.method == 'POST':
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        request_type = request.form.get('request_type')
+        try:
+            new_start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            new_end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash("Invalid date format. Please use YYYY-MM-DD.", "danger")
+            return redirect(url_for('main.edit_holiday_request', request_id=request_id))
+        if new_end_date < new_start_date:
+            flash("End date cannot be before start date.", "danger")
+            return redirect(url_for('main.edit_holiday_request', request_id=request_id))
+        holiday_request.start_date = new_start_date
+        holiday_request.end_date = new_end_date
+        holiday_request.request_type = request_type
+        db.session.commit()
+        flash("Holiday request updated successfully.", "success")
+        return redirect(url_for('main.holiday_requests'))
+    return render_template('edit_holiday_request.html', holiday_request=holiday_request)
+
+@main_bp.route('/holiday_request/delete/<int:request_id>', methods=['POST'])
+@login_required
+def delete_holiday_request(request_id):
+    holiday_request = HolidayRequest.query.get_or_404(request_id)
+    if current_user.role != 'employee' or holiday_request.user_id != current_user.id:
+        flash("You are not authorized to delete this request.", "danger")
+        return redirect(url_for('main.holiday_requests'))
+    if holiday_request.status != 'pending':
+        flash("Only pending requests can be deleted.", "warning")
+        return redirect(url_for('main.holiday_requests'))
+    db.session.delete(holiday_request)
+    db.session.commit()
+    flash("Holiday request deleted successfully.", "success")
+    return redirect(url_for('main.holiday_requests'))
+
+# ---------------- New Route: Manager Dashboard ----------------
+@main_bp.route('/manager_dashboard')
+@login_required
+def manager_dashboard():
+    # Only allow access for managers and admins
+    if current_user.role not in ['manager', 'admin']:
+        flash("Access denied: you are not authorized to view the manager dashboard.", "danger")
+        return redirect(url_for('main.calendar'))
+    pending_requests = HolidayRequest.query.filter_by(status='pending').all()
+    today = date.today()
+    current_on_leave = HolidayRequest.query.filter(
+        HolidayRequest.status == 'approved',
+        HolidayRequest.start_date <= today,
+        HolidayRequest.end_date >= today
+    ).all()
+    total_requests = HolidayRequest.query.count()
+    summary = {
+        "pending_count": len(pending_requests),
+        "current_on_leave_count": len(current_on_leave),
+        "total_requests": total_requests
+    }
+    return render_template('manager_dashboard.html',
+                           pending_requests=pending_requests,
+                           current_on_leave=current_on_leave,
+                           summary=summary)

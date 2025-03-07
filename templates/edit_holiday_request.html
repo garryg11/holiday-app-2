@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <h2>Edit Holiday Request</h2>
+  <form method="POST" action="{{ url_for('main.edit_holiday_request', request_id=holiday_request.id) }}">
+    <div class="mb-3">
+      <label for="start_date" class="form-label">Start Date</label>
+      <input type="date" class="form-control" id="start_date" name="start_date" value="{{ holiday_request.start_date.strftime('%Y-%m-%d') }}" required>
+    </div>
+    <div class="mb-3">
+      <label for="end_date" class="form-label">End Date</label>
+      <input type="date" class="form-control" id="end_date" name="end_date" value="{{ holiday_request.end_date.strftime('%Y-%m-%d') }}" required>
+    </div>
+    <div class="mb-3">
+      <label for="request_type" class="form-label">Request Type</label>
+      <select class="form-select" id="request_type" name="request_type" required>
+        <option value="vacation" {% if holiday_request.request_type == 'vacation' %}selected{% endif %}>Vacation</option>
+        <option value="time_compensation" {% if holiday_request.request_type == 'time_compensation' %}selected{% endif %}>Time Compensation</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Update Request</button>
+  </form>
+</div>
+{% endblock %}

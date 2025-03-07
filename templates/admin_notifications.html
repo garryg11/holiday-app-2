@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <h2>Notification Settings</h2>
+  <p>Manage your notification settings here. (Functionality under development.)</p>
+  <form method="POST" action="{{ url_for('admin.notifications') }}">
+    <div class="mb-3">
+      <label for="notification_email" class="form-label">Notification Email</label>
+      <input type="email" class="form-control" id="notification_email" name="notification_email" value="{{ current_user.email }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Update Notification Settings</button>
+  </form>
+</div>
+{% endblock %}

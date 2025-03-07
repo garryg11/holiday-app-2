@@ -6,11 +6,12 @@
     <table class="table table-bordered">
       <thead>
         <tr>
-          <th>ID</th>
+          <th>Request ID</th>
           <th>Start Date</th>
           <th>End Date</th>
           <th>Type</th>
           <th>Status</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -21,6 +22,16 @@
           <td>{{ req.end_date.strftime('%Y-%m-%d') }}</td>
           <td>{{ req.request_type }}</td>
           <td>{{ req.status }}</td>
+          <td>
+            {% if req.status == 'pending' and current_user.id == req.user_id %}
+              <a href="{{ url_for('main.edit_holiday_request', request_id=req.id) }}" class="btn btn-sm btn-warning">Edit</a>
+              <form action="{{ url_for('main.delete_holiday_request', request_id=req.id) }}" method="POST" style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this request?');">Delete</button>
+              </form>
+            {% else %}
+              N/A
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -28,6 +39,5 @@
   {% else %}
     <p>No holiday requests found.</p>
   {% endif %}
-  <a href="{{ url_for('main.new_holiday_request') }}" class="btn btn-primary">Submit New Request</a>
 </div>
 {% endblock %}

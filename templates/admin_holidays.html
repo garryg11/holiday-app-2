@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <h2>Manage Public Holidays</h2>
+  <a href="{{ url_for('admin.new_holiday') }}" class="btn btn-primary mb-3">Add New Holiday</a>
+  {% if holidays %}
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Date</th>
+          <th>Name</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for holiday in holidays %}
+        <tr>
+          <td>{{ holiday.id }}</td>
+          <td>{{ holiday.holiday_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ holiday.name }}</td>
+          <td>
+            <a href="{{ url_for('admin.edit_holiday', holiday_id=holiday.id) }}" class="btn btn-warning btn-sm">Edit</a>
+            <form action="{{ url_for('admin.delete_holiday', holiday_id=holiday.id) }}" method="POST" style="display:inline;">
+              <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this holiday?');">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No public holidays configured.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <h2>Supervisor Dashboard</h2>
+  
+  <!-- Summary Section -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card text-white bg-warning mb-3">
+        <div class="card-header">Pending Requests</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ summary.pending_count }}</h5>
+          <p class="card-text">Total pending requests needing your approval.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card text-white bg-success mb-3">
+        <div class="card-header">Currently On Leave</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ summary.current_on_leave_count }}</h5>
+          <p class="card-text">Team members currently on leave.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Pending Requests Table -->
+  <h3>Pending Requests</h3>
+  {% if pending_requests %}
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Request ID</th>
+          <th>User Email</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Type</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in pending_requests %}
+        <tr>
+          <td>{{ req.id }}</td>
+          <td>{{ req.user.email }}</td>
+          <td>{{ req.start_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ req.end_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ req.request_type }}</td>
+          <td>
+            <a href="{{ url_for('main.update_request', request_id=req.id, action='approve') }}" class="btn btn-success btn-sm">Approve</a>
+            <a href="{{ url_for('main.update_request', request_id=req.id, action='reject') }}" class="btn btn-danger btn-sm">Reject</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No pending requests.</p>
+  {% endif %}
+  
+  <!-- Currently On Leave Table -->
+  <h3 class="mt-5">Team Members Currently On Leave</h3>
+  {% if current_on_leave %}
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Request ID</th>
+          <th>User Email</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in current_on_leave %}
+        <tr>
+          <td>{{ req.id }}</td>
+          <td>{{ req.user.email }}</td>
+          <td>{{ req.start_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ req.end_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ req.request_type }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No team members are currently on leave.</p>
+  {% endif %}
+</div>
+{% endblock %}

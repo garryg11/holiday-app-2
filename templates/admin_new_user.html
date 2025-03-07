@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <h2>Add New User</h2>
+  <form method="POST" action="{{ url_for('admin.new_user') }}">
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input type="email" class="form-control" id="email" name="email" required>
+    </div>
+    <div class="mb-3">
+      <label for="password" class="form-label">Password</label>
+      <input type="password" class="form-control" id="password" name="password" required>
+    </div>
+    <div class="mb-3">
+      <label for="role" class="form-label">Role</label>
+      <select class="form-select" id="role" name="role" required>
+        <option value="employee">Employee</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="manager">Manager</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="time_off_balance" class="form-label">Time-Off Balance</label>
+      <input type="number" step="0.1" class="form-control" id="time_off_balance" name="time_off_balance" value="20.0" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Create User</button>
+  </form>
+</div>
+{% endblock %}

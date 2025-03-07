@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <h2>Edit Holiday</h2>
+  <form method="POST" action="{{ url_for('admin.edit_holiday', holiday_id=holiday.id) }}">
+    <div class="mb-3">
+      <label for="holiday_date" class="form-label">Holiday Date</label>
+      <input type="date" class="form-control" id="holiday_date" name="holiday_date" value="{{ holiday.holiday_date.strftime('%Y-%m-%d') }}" required>
+    </div>
+    <div class="mb-3">
+      <label for="name" class="form-label">Holiday Name</label>
+      <input type="text" class="form-control" id="name" name="name" value="{{ holiday.name }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Update Holiday</button>
+  </form>
+</div>
+{% endblock %}

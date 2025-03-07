@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <h2>Currently On Leave</h2>
+  {% if ongoing_requests %}
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Request ID</th>
+          <th>User Email</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in ongoing_requests %}
+        <tr>
+          <td>{{ req.id }}</td>
+          <td>{{ req.user.email }}</td>
+          <td>{{ req.start_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ req.end_date.strftime('%Y-%m-%d') }}</td>
+          <td>{{ req.request_type }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No one is currently on leave.</p>
+  {% endif %}
+</div>
+{% endblock %}

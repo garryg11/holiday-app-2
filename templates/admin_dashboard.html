@@ -1,0 +1,126 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <h2>Admin Dashboard</h2>
+
+  <!-- Summary Section -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card text-white bg-primary mb-3">
+        <div class="card-header">Total Users</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ total_users }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-warning mb-3">
+        <div class="card-header">Total Requests</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ total_requests }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-danger mb-3">
+        <div class="card-header">Pending Requests</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ pending_requests }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-success mb-3">
+        <div class="card-header">Approved Requests</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ approved_requests }}</h5>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Administration Tools Section -->
+  <h3>Administration Tools</h3>
+  <div class="row mb-4">
+    <div class="col-md-2">
+      <div class="card">
+        <div class="card-body text-center">
+          <a href="{{ url_for('admin.users') }}" class="text-decoration-none">
+            <img src="https://img.icons8.com/fluency/48/user.png" alt="Users Icon"/>
+            <p class="mt-2 mb-0">Users</p>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card">
+        <div class="card-body text-center">
+          <a href="{{ url_for('admin.holidays') }}" class="text-decoration-none">
+            <img src="https://img.icons8.com/fluency/48/beach.png" alt="Holidays Icon"/>
+            <p class="mt-2 mb-0">Holidays</p>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card">
+        <div class="card-body text-center">
+          <a href="{{ url_for('admin.integrations') }}" class="text-decoration-none">
+            <img src="https://img.icons8.com/fluency/48/settings.png" alt="Integrations Icon"/>
+            <p class="mt-2 mb-0">Integrations</p>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card">
+        <div class="card-body text-center">
+          <a href="{{ url_for('admin.notifications') }}" class="text-decoration-none">
+            <img src="https://img.icons8.com/fluency/48/alarm.png" alt="Notifications Icon"/>
+            <p class="mt-2 mb-0">Notifications</p>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card">
+        <div class="card-body text-center">
+          <a href="{{ url_for('admin.security') }}" class="text-decoration-none">
+            <img src="https://img.icons8.com/fluency/48/lock.png" alt="Security Icon"/>
+            <p class="mt-2 mb-0">Security</p>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Audit Logs -->
+  <h3>Recent Audit Logs</h3>
+  {% if audit_logs %}
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Action</th>
+          <th>User Email</th>
+          <th>Timestamp</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in audit_logs %}
+        <tr>
+          <td>{{ log.id }}</td>
+          <td>{{ log.action }}</td>
+          <td>{{ log.user_email }}</td>
+          <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          <td>{{ log.details }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No audit logs available.</p>
+  {% endif %}
+</div>
+{% endblock %}
