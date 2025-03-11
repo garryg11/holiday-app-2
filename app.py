@@ -24,10 +24,12 @@ def create_app():
     # Register Blueprints
     from auth.routes import auth_bp
     from main.routes import main_bp
-    from admin.routes import admin_bp  # Import the admin blueprint
+    from admin.routes import admin_bp
+    from hr.routes import hr_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
-    app.register_blueprint(admin_bp)   # Register the admin blueprint
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(hr_bp)
     
     return app
 

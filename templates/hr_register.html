@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container">
-  <h2>Add New User</h2>
-  <form method="POST" action="{{ url_for('admin.new_user') }}">
+  <h2>Register New User (HR)</h2>
+  <form method="POST" action="{{ url_for('hr.register') }}">
     <div class="mb-3">
       <label for="name" class="form-label">Full Name</label>
       <input type="text" class="form-control" id="name" name="name" required>
@@ -37,8 +37,9 @@
     <div class="mb-3">
       <label for="time_off_balance" class="form-label">Time-Off Balance (days)</label>
       <input type="number" step="0.1" class="form-control" id="time_off_balance" name="time_off_balance" value="20.0" required>
+      <div class="form-text">Enter the number of leave days allocated (default is 20 days).</div>
     </div>
-    <button type="submit" class="btn btn-primary">Create User</button>
+    <button type="submit" class="btn btn-primary">Register</button>
   </form>
 </div>
 {% endblock %}

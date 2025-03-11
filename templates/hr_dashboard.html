@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">HR Dashboard</h2>
+  <!-- Dashboard Metrics -->
+  <div class="row">
+    <div class="col-md-3">
+      <div class="card shadow mb-4">
+        <div class="card-header">Total Employees</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ total_employees }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow mb-4">
+        <div class="card-header">Total Holiday Requests</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ total_requests }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow mb-4">
+        <div class="card-header">Approved Requests</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ approved_requests }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow mb-4">
+        <div class="card-header">Pending Requests</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ pending_requests }}</h5>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Link to register a new user -->
+  <div class="mb-4">
+    <a href="{{ url_for('hr.register') }}" class="btn btn-primary">Register New User</a>
+  </div>
+  
+  <!-- Table for toggling user activation -->
+  <h3>User Activation/Deactivation</h3>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Active</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in employees %}
+      <tr>
+        <td>{{ user.id }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.role }}</td>
+        <td>{{ 'Yes' if user.active else 'No' }}</td>
+        <td>
+          <form action="{{ url_for('hr.toggle_user', user_id=user.id) }}" method="POST">
+            <button type="submit" class="btn btn-sm btn-secondary">Toggle</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Employee Leave Balances -->
+  <h3>Employee Leave Balances</h3>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Total Leave (days)</th>
+        <th>Used Leave (days)</th>
+        <th>Remaining Leave (days)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for employee in employees %}
+      <tr>
+        <td>{{ employee.id }}</td>
+        <td>{{ employee.name }}</td>
+        <td>{{ employee.email }}</td>
+        <td>{{ employee.time_off_balance }}</td>
+        <td>{{ employee.used_time_off }}</td>
+        <td>{{ employee.remaining_time_off }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  <!-- Integration Management Link -->
+  <div class="mb-4">
+    <a href="{{ url_for('hr.integrations') }}" class="btn btn-primary">HRIS/Payroll Integration</a>
+  </div>
+</div>
+{% endblock %}

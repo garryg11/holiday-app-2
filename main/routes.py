@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify, current_app, flash, redirect, url_for, send_file, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, jsonify, current_app
 from flask_login import login_required, current_user
 from models import HolidayRequest
 from datetime import timedelta, datetime, date
@@ -17,7 +17,6 @@ def home():
 @main_bp.route('/calendar')
 @login_required
 def calendar():
-    # Simple suggestion logic (can be modified or removed)
     suggestion = ""
     if current_user.role == 'employee':
         if current_user.time_off_balance >= 10:
@@ -31,7 +30,6 @@ def calendar():
 @main_bp.route('/holiday_requests')
 @login_required
 def holiday_requests():
-    # Employees see only their own requests; others see all.
     if current_user.role == 'employee':
         requests_list = HolidayRequest.query.filter_by(user_id=current_user.id).all()
     else:
@@ -214,28 +212,29 @@ def delete_holiday_request(request_id):
     flash("Holiday request deleted successfully.", "success")
     return redirect(url_for('main.holiday_requests'))
 
+# ---------------- New Route: Employee Dashboard ----------------
+@main_bp.route('/employee_dashboard')
+@login_required
+def employee_dashboard():
+    if current_user.role != 'employee':
+        flash("Access denied: you are not an employee.", "danger")
+        return redirect(url_for('main.calendar'))
+    return render_template('employee_dashboard.html')
+
+# ---------------- New Route: Supervisor Dashboard ----------------
+@main_bp.route('/supervisor_dashboard')
+@login_required
+def supervisor_dashboard():
+    if current_user.role != 'supervisor':
+        flash("Access denied: you are not a supervisor.", "danger")
+        return redirect(url_for('main.calendar'))
+    return render_template('supervisor_dashboard.html')
+
 # ---------------- New Route: Manager Dashboard ----------------
 @main_bp.route('/manager_dashboard')
 @login_required
 def manager_dashboard():
-    # Only allow access for managers and admins
-    if current_user.role not in ['manager', 'admin']:
-        flash("Access denied: you are not authorized to view the manager dashboard.", "danger")
+    if current_user.role != 'manager':
+        flash("Access denied: you are not a manager.", "danger")
         return redirect(url_for('main.calendar'))
-    pending_requests = HolidayRequest.query.filter_by(status='pending').all()
-    today = date.today()
-    current_on_leave = HolidayRequest.query.filter(
-        HolidayRequest.status == 'approved',
-        HolidayRequest.start_date <= today,
-        HolidayRequest.end_date >= today
-    ).all()
-    total_requests = HolidayRequest.query.count()
-    summary = {
-        "pending_count": len(pending_requests),
-        "current_on_leave_count": len(current_on_leave),
-        "total_requests": total_requests
-    }
-    return render_template('manager_dashboard.html',
-                           pending_requests=pending_requests,
-                           current_on_leave=current_on_leave,
-                           summary=summary)
+    return render_template('manager_dashboard.html')

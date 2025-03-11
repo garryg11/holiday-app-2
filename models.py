@@ -5,15 +5,44 @@ from datetime import datetime
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    name = db.Column(db.String(120), nullable=True)           # Full name field
+    cost_center = db.Column(db.String(50), nullable=True)       # Cost center field
     password_hash = db.Column(db.String(128), nullable=False)
-    role = db.Column(db.String(20), nullable=False)  # Options: 'employee', 'supervisor', 'manager', 'admin'
+    role = db.Column(db.String(20), nullable=False)             # Roles: employee, supervisor, manager, admin, hr, sub-admin
     time_off_balance = db.Column(db.Float, nullable=False, default=20.0, server_default="20.0")
+    active = db.Column(db.Boolean, nullable=False, default=True, server_default="1")
+    department = db.Column(db.String(100), nullable=True)       # Department field
 
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
+
+    @property
+    def is_active(self):
+        return self.active
+
+    @property
+    def time_off_balance_hours(self):
+        # Assume 8 working hours per day
+        return self.time_off_balance * 8
+
+    @property
+    def used_time_off(self):
+        """
+        Calculate the total number of days used from approved holiday requests.
+        """
+        approved_requests = [r for r in self.holiday_requests if r.status == 'approved']
+        total_days = sum(((r.end_date - r.start_date).days + 1) for r in approved_requests)
+        return total_days
+
+    @property
+    def remaining_time_off(self):
+        """
+        Calculate remaining leave days.
+        """
+        return self.time_off_balance - self.used_time_off
 
     def __repr__(self):
         return f'<User {self.email}>'

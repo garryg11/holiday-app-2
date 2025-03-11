@@ -1,10 +1,8 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container">
-  <h2>Admin Dashboard</h2>
-
-  <!-- Summary Section -->
-  <div class="row mb-4">
+  <h2 class="mb-4">Admin Dashboard</h2>
+  <div class="row">
     <div class="col-md-3">
       <div class="card text-white bg-primary mb-3">
         <div class="card-header">Total Users</div>
@@ -39,7 +37,6 @@
     </div>
   </div>
 
-  <!-- Administration Tools Section -->
   <h3>Administration Tools</h3>
   <div class="row mb-4">
     <div class="col-md-2">
@@ -94,7 +91,6 @@
     </div>
   </div>
 
-  <!-- Recent Audit Logs -->
   <h3>Recent Audit Logs</h3>
   {% if audit_logs %}
     <table class="table table-bordered">
