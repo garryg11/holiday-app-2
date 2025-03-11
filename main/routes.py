@@ -39,33 +39,56 @@ def holiday_requests():
 @main_bp.route('/holiday_request/new', methods=['GET', 'POST'])
 @login_required
 def new_holiday_request():
+    """
+    Allows an employee to submit a new holiday request.
+    - GET: Render the form.
+    - POST: Process form data, validate dates, and save request to DB.
+    Redirects to Employee Dashboard on success.
+    """
+    # Only employees can submit new requests
     if current_user.role != 'employee':
         flash("Only employees can submit new holiday requests.", "danger")
         return redirect(url_for('main.calendar'))
+    
     if request.method == 'POST':
         start_date_str = request.form.get('start_date')
         end_date_str = request.form.get('end_date')
         request_type = request.form.get('request_type')
+        comment = request.form.get('comment', '')  # New: capture optional comment
+        
+        # Convert date strings to Python date objects
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
         except ValueError:
             flash('Invalid date format. Please use YYYY-MM-DD.', 'danger')
             return redirect(url_for('main.new_holiday_request'))
+        
+        # Validate that end_date is not before start_date
         if end_date < start_date:
             flash('End date cannot be before start date.', 'danger')
             return redirect(url_for('main.new_holiday_request'))
+        
+        # Create a new holiday request
         holiday_request = HolidayRequest(
             user_id=current_user.id,
             start_date=start_date,
             end_date=end_date,
             request_type=request_type,
+            comment=comment,  # Save the comment
             status='pending'
         )
+        
+        # Save to database
         db.session.add(holiday_request)
         db.session.commit()
+        
         flash('Holiday request submitted successfully.', 'success')
-        return redirect(url_for('main.holiday_requests'))
+        
+        # Redirect to Employee Dashboard instead of holiday_requests
+        return redirect(url_for('main.employee_dashboard'))
+    
+    # GET request: just render the form
     return render_template('new_holiday_request.html')
 
 @main_bp.route('/approval_requests')
@@ -212,7 +235,6 @@ def delete_holiday_request(request_id):
     flash("Holiday request deleted successfully.", "success")
     return redirect(url_for('main.holiday_requests'))
 
-# ---------------- New Route: Employee Dashboard ----------------
 @main_bp.route('/employee_dashboard')
 @login_required
 def employee_dashboard():
@@ -221,7 +243,6 @@ def employee_dashboard():
         return redirect(url_for('main.calendar'))
     return render_template('employee_dashboard.html')
 
-# ---------------- New Route: Supervisor Dashboard ----------------
 @main_bp.route('/supervisor_dashboard')
 @login_required
 def supervisor_dashboard():
@@ -230,7 +251,6 @@ def supervisor_dashboard():
         return redirect(url_for('main.calendar'))
     return render_template('supervisor_dashboard.html')
 
-# ---------------- New Route: Manager Dashboard ----------------
 @main_bp.route('/manager_dashboard')
 @login_required
 def manager_dashboard():

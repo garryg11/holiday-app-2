@@ -1,24 +1,86 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container">
-  <h2>Submit a New Holiday Request</h2>
-  <form method="POST" action="{{ url_for('main.new_holiday_request') }}">
-    <div class="mb-3">
-      <label for="start_date" class="form-label">Start Date</label>
-      <input type="date" class="form-control" id="start_date" name="start_date" required>
+<div class="container py-4">
+  <h2 class="mb-4">Submit a New Holiday Request</h2>
+  <p>Need some time off? Fill out the form below to request your leave.</p>
+  
+  <!-- Display any flashed messages (errors, success, etc.) -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" role="alert">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  
+  <div class="card shadow">
+    <div class="card-body">
+      <!-- Holiday Request Form -->
+      <form method="POST" action="{{ url_for('main.new_holiday_request') }}" novalidate>
+        <!-- Start Date -->
+        <div class="mb-3">
+          <label for="start_date" class="form-label">Start Date</label>
+          <input 
+            type="date" 
+            class="form-control" 
+            id="start_date" 
+            name="start_date" 
+            required
+          >
+          <div class="form-text">Select the first day of your leave.</div>
+        </div>
+        
+        <!-- End Date -->
+        <div class="mb-3">
+          <label for="end_date" class="form-label">End Date</label>
+          <input 
+            type="date" 
+            class="form-control" 
+            id="end_date" 
+            name="end_date" 
+            required
+          >
+          <div class="form-text">Select the last day of your leave.</div>
+        </div>
+        
+        <!-- Request Type -->
+        <div class="mb-3">
+          <label for="request_type" class="form-label">Request Type</label>
+          <select 
+            class="form-select" 
+            id="request_type" 
+            name="request_type" 
+            required
+          >
+            <option value="vacation" selected>Vacation</option>
+            <option value="time compensation">Time Compensation</option>
+            <option value="sick leave">Sick Leave</option>
+            <option value="personal leave">Personal Leave</option>
+          </select>
+        </div>
+        
+        <!-- Comments (optional) -->
+        <div class="mb-3">
+          <label for="comment" class="form-label">Comments (optional)</label>
+          <textarea 
+            class="form-control" 
+            id="comment" 
+            name="comment" 
+            rows="3" 
+            placeholder="Any specific details or reasons for the request?"
+          ></textarea>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="d-flex justify-content-between">
+          <button type="submit" class="btn btn-primary">Submit Request</button>
+          <!-- Cancel Button redirects to Employee Dashboard -->
+          <a href="{{ url_for('main.employee_dashboard') }}" class="btn btn-danger">Cancel Request</a>
+        </div>
+      </form>
     </div>
-    <div class="mb-3">
-      <label for="end_date" class="form-label">End Date</label>
-      <input type="date" class="form-control" id="end_date" name="end_date" required>
-    </div>
-    <div class="mb-3">
-      <label for="request_type" class="form-label">Request Type</label>
-      <select class="form-select" id="request_type" name="request_type" required>
-        <option value="vacation">Vacation</option>
-        <option value="time_compensation">Time Compensation</option>
-      </select>
-    </div>
-    <button type="submit" class="btn btn-primary">Submit Request</button>
-  </form>
+  </div>
 </div>
 {% endblock %}
