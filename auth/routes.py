@@ -1,63 +1,80 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_user, logout_user, login_required, current_user
+from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask_login import login_user, logout_user, current_user, login_required
 from models import User
 from extensions import db
-from urllib.parse import urlparse  # Using Python's standard library
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-def role_based_dashboard(user):
-    # Redirect users based on their role
-    if user.role == 'employee':
-        return url_for('main.employee_dashboard')
-    elif user.role == 'supervisor':
-        return url_for('main.supervisor_dashboard')
-    elif user.role == 'manager':
-        return url_for('main.manager_dashboard')
-    elif user.role == 'admin':
-        return url_for('admin.dashboard')
-    elif user.role == 'hr':
-        return url_for('hr.dashboard')
-    return url_for('main.calendar')
-
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    """
+    Handles user login. If the user is already authenticated, 
+    they are redirected to the main calendar. Otherwise, 
+    we check their credentials and log them in.
+    
+    If force_password_reset is True, the user is redirected 
+    to reset_password to update their temporary password.
+    """
     if current_user.is_authenticated:
-        return redirect(role_based_dashboard(current_user))
+        return redirect(url_for('main.calendar'))
+    
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
         user = User.query.filter_by(email=email).first()
+        
         if user and user.check_password(password):
             login_user(user)
-            flash('Logged in successfully.', 'success')
-            return redirect(role_based_dashboard(user))
+            
+            # If the user has a temporary password, force a reset
+            if user.force_password_reset:
+                flash("Please reset your password.", "warning")
+                return redirect(url_for('auth.reset_password'))
+            
+            return redirect(url_for('main.calendar'))
         else:
-            flash('Invalid email or password.', 'danger')
+            flash("Invalid email or password.", "danger")
+    
+    # Render the login form using the login.html template
     return render_template('login.html')
 
-@auth_bp.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(role_based_dashboard(current_user))
+@auth_bp.route('/reset_password', methods=['GET', 'POST'])
+@login_required
+def reset_password():
+    """
+    Forces a user with a temporary password to set a new password. 
+    If the two passwords do not match or are too short, 
+    the user is prompted again.
+    """
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        # For simplicity, all new registrations will have role 'employee'
-        if User.query.filter_by(email=email).first():
-            flash("Email already registered.", "danger")
-            return redirect(url_for('auth.register'))
-        new_user = User(email=email, role='employee', time_off_balance=20.0)
-        new_user.set_password(password)
-        db.session.add(new_user)
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if new_password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return redirect(url_for('auth.reset_password'))
+        
+        if len(new_password) < 6:
+            flash("Password must be at least 6 characters long.", "danger")
+            return redirect(url_for('auth.reset_password'))
+        
+        # Update the user's password and clear the temporary flag
+        current_user.set_password(new_password)
+        current_user.force_password_reset = False
         db.session.commit()
-        flash("Registration successful. Please log in.", "success")
-        return redirect(url_for('auth.login'))
-    return render_template('register.html')
+        
+        flash("Your password has been updated.", "success")
+        return redirect(url_for('main.calendar'))
+    
+    # Render the reset password form using the auth_reset_password.html template
+    return render_template('auth_reset_password.html')
 
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    """
+    Logs the user out and redirects them to the login page.
+    """
     logout_user()
-    flash('You have been logged out.', 'info')
+    flash("You have been logged out.", "info")
     return redirect(url_for('auth.login'))
