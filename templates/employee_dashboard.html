@@ -10,12 +10,10 @@
       <div class="card shadow mb-4">
         <div class="card-header">Time-Off Balance</div>
         <div class="card-body">
-          <!-- Calculate used/total hours in the template -->
           {% set used_time_off_hours = current_user.used_time_off * 8 %}
           {% set total_time_off_hours = current_user.time_off_balance_hours %}
           {% set used_percentage = (used_time_off_hours / total_time_off_hours) * 100 if total_time_off_hours > 0 else 0 %}
           
-          <!-- Progress Bar -->
           <label class="form-label fw-bold">Used / Total</label>
           <div class="progress mb-3" style="height: 25px;">
             <div 
@@ -51,7 +49,7 @@
     </div>
   </div>
   
-  <!-- Recent Requests Table -->
+  <!-- Recent Requests Section -->
   {% if recent_requests %}
     <h4 class="mt-4">Recent Requests</h4>
     <table class="table table-hover">
@@ -73,13 +71,18 @@
             {% elif req.status == 'pending' %}
               <span class="badge bg-warning text-dark">Pending</span>
             {% else %}
-              <span class="badge bg-danger">Declined</span>
+              <span class="badge bg-danger">Rejected</span>
             {% endif %}
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    
+    <!-- View All Requests Button -->
+    <div class="text-end">
+      <a href="{{ url_for('main.holiday_requests') }}" class="btn btn-secondary">View All Requests</a>
+    </div>
   {% else %}
     <p class="mt-4">You have no recent requests.</p>
   {% endif %}

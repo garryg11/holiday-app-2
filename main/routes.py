@@ -45,7 +45,6 @@ def new_holiday_request():
     - POST: Process form data, validate dates, and save request to DB.
     Redirects to Employee Dashboard on success.
     """
-    # Only employees can submit new requests
     if current_user.role != 'employee':
         flash("Only employees can submit new holiday requests.", "danger")
         return redirect(url_for('main.calendar'))
@@ -54,7 +53,7 @@ def new_holiday_request():
         start_date_str = request.form.get('start_date')
         end_date_str = request.form.get('end_date')
         request_type = request.form.get('request_type')
-        comment = request.form.get('comment', '')  # New: capture optional comment
+        comment = request.form.get('comment', '')
         
         # Convert date strings to Python date objects
         try:
@@ -64,31 +63,25 @@ def new_holiday_request():
             flash('Invalid date format. Please use YYYY-MM-DD.', 'danger')
             return redirect(url_for('main.new_holiday_request'))
         
-        # Validate that end_date is not before start_date
         if end_date < start_date:
             flash('End date cannot be before start date.', 'danger')
             return redirect(url_for('main.new_holiday_request'))
         
-        # Create a new holiday request
         holiday_request = HolidayRequest(
             user_id=current_user.id,
             start_date=start_date,
             end_date=end_date,
             request_type=request_type,
-            comment=comment,  # Save the comment
+            comment=comment,
             status='pending'
         )
         
-        # Save to database
         db.session.add(holiday_request)
         db.session.commit()
         
         flash('Holiday request submitted successfully.', 'success')
-        
-        # Redirect to Employee Dashboard instead of holiday_requests
         return redirect(url_for('main.employee_dashboard'))
     
-    # GET request: just render the form
     return render_template('new_holiday_request.html')
 
 @main_bp.route('/approval_requests')
@@ -113,14 +106,17 @@ def update_request(request_id, action):
     if action not in ['approve', 'reject']:
         flash('Invalid action.', 'danger')
         return redirect(url_for('main.approval_requests'))
+    
     if action == 'approve':
         requested_days = (holiday_request.end_date - holiday_request.start_date).days + 1
         if holiday_request.user.time_off_balance < requested_days:
             flash('Insufficient time off balance to approve this request.', 'danger')
             return redirect(url_for('main.approval_requests'))
         holiday_request.user.time_off_balance -= requested_days
+    
     holiday_request.status = 'approved' if action == 'approve' else 'rejected'
     db.session.commit()
+    
     subject = f"Holiday Request {action.capitalize()}d"
     sender = current_app.config['MAIL_USERNAME']
     recipients = [holiday_request.user.email]
@@ -132,6 +128,7 @@ def update_request(request_id, action):
     )
     msg = Message(subject, sender=sender, recipients=recipients, body=msg_body)
     mail.send(msg)
+    
     flash(f'Request {action}d successfully. An email notification has been sent.', 'success')
     return redirect(url_for('main.approval_requests'))
 
@@ -142,6 +139,7 @@ def export_reports():
         requests_list = HolidayRequest.query.filter_by(user_id=current_user.id).all()
     else:
         requests_list = HolidayRequest.query.all()
+    
     data = []
     for req in requests_list:
         data.append({
@@ -153,6 +151,7 @@ def export_reports():
             "Status": req.status,
             "Comment": req.comment or ""
         })
+    
     df = pd.DataFrame(data)
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -199,25 +198,31 @@ def edit_holiday_request(request_id):
     if holiday_request.status != 'pending':
         flash("Only pending requests can be edited.", "warning")
         return redirect(url_for('main.holiday_requests'))
+    
     if request.method == 'POST':
         start_date_str = request.form.get('start_date')
         end_date_str = request.form.get('end_date')
         request_type = request.form.get('request_type')
+        
         try:
             new_start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             new_end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
         except ValueError:
             flash("Invalid date format. Please use YYYY-MM-DD.", "danger")
             return redirect(url_for('main.edit_holiday_request', request_id=request_id))
+        
         if new_end_date < new_start_date:
             flash("End date cannot be before start date.", "danger")
             return redirect(url_for('main.edit_holiday_request', request_id=request_id))
+        
         holiday_request.start_date = new_start_date
         holiday_request.end_date = new_end_date
         holiday_request.request_type = request_type
         db.session.commit()
+        
         flash("Holiday request updated successfully.", "success")
         return redirect(url_for('main.holiday_requests'))
+    
     return render_template('edit_holiday_request.html', holiday_request=holiday_request)
 
 @main_bp.route('/holiday_request/delete/<int:request_id>', methods=['POST'])
@@ -230,18 +235,34 @@ def delete_holiday_request(request_id):
     if holiday_request.status != 'pending':
         flash("Only pending requests can be deleted.", "warning")
         return redirect(url_for('main.holiday_requests'))
+    
     db.session.delete(holiday_request)
     db.session.commit()
     flash("Holiday request deleted successfully.", "success")
     return redirect(url_for('main.holiday_requests'))
 
+# ---------------- Updated Employee Dashboard Route ----------------
 @main_bp.route('/employee_dashboard')
 @login_required
 def employee_dashboard():
+    """
+    Displays the Employee Dashboard for the current user.
+    Shows up to 5 most recent holiday requests.
+    """
     if current_user.role != 'employee':
         flash("Access denied: you are not an employee.", "danger")
         return redirect(url_for('main.calendar'))
-    return render_template('employee_dashboard.html')
+    
+    # Retrieve up to 5 of the most recent requests for the logged-in user
+    recent_requests = (
+        HolidayRequest.query
+        .filter_by(user_id=current_user.id)
+        .order_by(HolidayRequest.id.desc())
+        .limit(5)
+        .all()
+    )
+    
+    return render_template('employee_dashboard.html', recent_requests=recent_requests)
 
 @main_bp.route('/supervisor_dashboard')
 @login_required

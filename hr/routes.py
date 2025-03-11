@@ -38,7 +38,7 @@ def dashboard():
 @hr_required
 def register():
     if request.method == 'POST':
-        employee_id = request.form.get('employee_id')  # You may store this in your User model if desired.
+        employee_id = request.form.get('employee_id')  # Optionally store this if desired.
         email = request.form.get('email')
         name = request.form.get('name')
         role = request.form.get('role')
@@ -49,6 +49,11 @@ def register():
         
         if User.query.filter_by(email=email).first():
             flash("User with that email already exists.", "danger")
+            return redirect(url_for('hr.register'))
+        
+        # Restrict HR from creating Admin, Sub-Admin, or HR accounts.
+        if role in ['admin', 'sub-admin', 'hr']:
+            flash("HR cannot create Admin, Sub-Admin, or HR accounts.", "danger")
             return redirect(url_for('hr.register'))
         
         # Generate a system-generated temporary password
@@ -63,16 +68,17 @@ def register():
             time_off_balance=time_off_balance,
         )
         new_user.set_password(temp_password)
-        # Mark the user to force password reset on first login
+        # Mark the user to force a password reset on first login
         new_user.force_password_reset = True
         
         db.session.add(new_user)
         db.session.commit()
         
         # For demonstration, we flash the temporary password.
-        # In a production environment, email this securely to the new user.
+        # In production, you should email this securely to the new user.
         flash(f"New user registered successfully. Temporary password: {temp_password}", "success")
         return redirect(url_for('hr.dashboard'))
+    
     return render_template('hr_register.html')
 
 @hr_bp.route('/toggle_user/<int:user_id>', methods=['POST'])
