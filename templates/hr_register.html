@@ -55,8 +55,8 @@
       </div>
       <div class="mb-3">
         <label for="time_off_balance_hours" class="form-label">Time-Off Balance (hours) <span class="text-danger">*</span></label>
-        <input type="number" step="1" class="form-control" id="time_off_balance_hours" name="time_off_balance_hours" placeholder="Enter allocated leave hours" value="160" required aria-required="true" min="0">
-        <div class="form-text">Enter the number of leave hours allocated (typically 20 days × 8 = 160 hours).</div>
+        <input type="number" step="1" class="form-control" id="time_off_balance_hours" name="time_off_balance_hours" placeholder="Calculated automatically" value="160" required aria-required="true" min="0" readonly>
+        <div class="form-text">Automatically calculated as (days * 8).</div>
       </div>
     </fieldset>
     <div class="d-flex justify-content-between">
@@ -66,21 +66,33 @@
   </form>
 </div>
 
-<!-- Optional JavaScript for enhanced client-side validation using Bootstrap -->
+<!-- Optional JavaScript for enhanced client-side validation and auto-calculation -->
 <script>
 (function () {
   'use strict';
   window.addEventListener('load', function () {
-    var forms = document.getElementsByTagName('form');
-    Array.prototype.filter.call(forms, function(form) {
-      form.addEventListener('submit', function (event) {
-        if (form.checkValidity() === false) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-        form.classList.add('was-validated');
-      }, false);
-    });
+    var form = document.getElementsByTagName('form')[0];
+    form.addEventListener('submit', function (event) {
+      if (form.checkValidity() === false) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+
+    // Auto-calculate Time-Off Balance (hours) based on Time-Off Balance (days)
+    var daysInput = document.getElementById('time_off_balance');
+    var hoursInput = document.getElementById('time_off_balance_hours');
+
+    function updateHours() {
+      var days = parseFloat(daysInput.value);
+      if (!isNaN(days)) {
+        hoursInput.value = Math.round(days * 8);
+      }
+    }
+
+    // Listen for input events on the days field to update hours dynamically
+    daysInput.addEventListener('input', updateHours);
   }, false);
 })();
 </script>
