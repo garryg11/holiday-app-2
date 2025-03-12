@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container py-4">
+  <h2>Reversed Chronological List of Approved Events</h2>
+  <p>This page displays approved holiday requests with the newest events at the top.</p>
+  <div id="reversedList"></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  fetch("{{ url_for('main.api_reversed_calendar_events') }}")
+    .then(response => response.json())
+    .then(data => {
+      const container = document.getElementById('reversedList');
+      const events = data.events || [];
+      
+      if(events.length === 0){
+        container.innerHTML = "<p>No approved events found.</p>";
+        return;
+      }
+      
+      let html = "<ul class='list-group'>";
+      events.forEach(ev => {
+        const startDate = new Date(ev.start).toLocaleDateString();
+        const endDate = new Date(ev.end).toLocaleDateString();
+        html += `
+          <li class="list-group-item">
+            <strong>${ev.title}</strong><br>
+            Start: ${startDate} | End: ${endDate}
+          </li>
+        `;
+      });
+      html += "</ul>";
+      container.innerHTML = html;
+    })
+    .catch(error => {
+      console.error("Error fetching reversed events:", error);
+      document.getElementById('reversedList').innerHTML = "<p class='text-danger'>Failed to load events.</p>";
+    });
+});
+</script>
+{% endblock %}

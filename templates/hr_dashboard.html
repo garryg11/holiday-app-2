@@ -1,106 +1,176 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container">
+<div class="container py-4">
   <h2 class="mb-4">HR Dashboard</h2>
-  <!-- Dashboard Metrics -->
-  <div class="row">
+  
+  <!-- Metrics Cards -->
+  <div class="row mb-4">
     <div class="col-md-3">
-      <div class="card shadow mb-4">
-        <div class="card-header">Total Employees</div>
-        <div class="card-body">
+      <div class="card shadow">
+        <div class="card-header text-center">Total Employees</div>
+        <div class="card-body text-center">
           <h5 class="card-title">{{ total_employees }}</h5>
         </div>
       </div>
     </div>
     <div class="col-md-3">
-      <div class="card shadow mb-4">
-        <div class="card-header">Total Holiday Requests</div>
-        <div class="card-body">
+      <div class="card shadow">
+        <div class="card-header text-center">Total Holiday Requests</div>
+        <div class="card-body text-center">
           <h5 class="card-title">{{ total_requests }}</h5>
         </div>
       </div>
     </div>
     <div class="col-md-3">
-      <div class="card shadow mb-4">
-        <div class="card-header">Approved Requests</div>
-        <div class="card-body">
+      <div class="card shadow">
+        <div class="card-header text-center">Approved Requests</div>
+        <div class="card-body text-center">
           <h5 class="card-title">{{ approved_requests }}</h5>
         </div>
       </div>
     </div>
     <div class="col-md-3">
-      <div class="card shadow mb-4">
-        <div class="card-header">Pending Requests</div>
-        <div class="card-body">
+      <div class="card shadow">
+        <div class="card-header text-center">Pending Requests</div>
+        <div class="card-body text-center">
           <h5 class="card-title">{{ pending_requests }}</h5>
         </div>
       </div>
     </div>
   </div>
   
-  <!-- Link to register a new user -->
+  <!-- Register New User Button -->
   <div class="mb-4">
     <a href="{{ url_for('hr.register') }}" class="btn btn-primary">Register New User</a>
   </div>
   
-  <!-- Table for toggling user activation -->
-  <h3>User Activation/Deactivation</h3>
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>User ID</th>
-        <th>Email</th>
-        <th>Role</th>
-        <th>Active</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for user in employees %}
-      <tr>
-        <td>{{ user.id }}</td>
-        <td>{{ user.email }}</td>
-        <td>{{ user.role }}</td>
-        <td>{{ 'Yes' if user.active else 'No' }}</td>
-        <td>
-          <form action="{{ url_for('hr.toggle_user', user_id=user.id) }}" method="POST">
-            <button type="submit" class="btn btn-sm btn-secondary">Toggle</button>
-          </form>
-        </td>
-      </tr>
+  <!-- Search and Filter Form -->
+  <form method="GET" action="{{ url_for('hr.dashboard') }}" class="mb-4">
+    <div class="input-group">
+      <input type="text" class="form-control" name="search" placeholder="Search by email" value="{{ request.args.get('search', '') }}">
+      <button class="btn btn-outline-secondary" type="submit">Search</button>
+    </div>
+  </form>
+  
+  <!-- User Activation/Deactivation Table -->
+  <div class="card shadow mb-4">
+    <div class="card-header">User Activation/Deactivation</div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>User ID</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Active</th>
+            <th class="text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in employees.items %}
+          <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.role }}</td>
+            <td>
+              {% if user.active %}
+                <span class="badge bg-success">Active</span>
+              {% else %}
+                <span class="badge bg-danger">Inactive</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <form action="{{ url_for('hr.toggle_user', user_id=user.id) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-secondary">Toggle</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Pagination Controls -->
+  <nav aria-label="Employee pagination">
+    <ul class="pagination justify-content-center">
+      {% if employees.has_prev %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('hr.dashboard', page=employees.prev_num, search=request.args.get('search', '')) }}">Previous</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+      {% endif %}
+      
+      {% for p in employees.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+        {% if p %}
+          {% if p == employees.page %}
+            <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+          {% else %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('hr.dashboard', page=p, search=request.args.get('search', '')) }}">{{ p }}</a>
+            </li>
+          {% endif %}
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
       {% endfor %}
-    </tbody>
-  </table>
-
-  <!-- Employee Leave Balances -->
-  <h3>Employee Leave Balances</h3>
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>User ID</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Total Leave (days)</th>
-        <th>Used Leave (days)</th>
-        <th>Remaining Leave (days)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for employee in employees %}
-      <tr>
-        <td>{{ employee.id }}</td>
-        <td>{{ employee.name }}</td>
-        <td>{{ employee.email }}</td>
-        <td>{{ employee.time_off_balance }}</td>
-        <td>{{ employee.used_time_off }}</td>
-        <td>{{ employee.remaining_time_off }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      
+      {% if employees.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('hr.dashboard', page=employees.next_num, search=request.args.get('search', '')) }}">Next</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+  
+  <!-- Employee Leave Balances Table -->
+  <div class="card shadow mb-4">
+    <div class="card-header">Employee Leave Balances</div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>User ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Total Leave (days)</th>
+            <th>Used Leave (days)</th>
+            <th>Remaining Leave (days)</th>
+            <th>Usage Progress</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for emp in employees.items %}
+          <tr>
+            <td>{{ emp.id }}</td>
+            <td>{{ emp.name }}</td>
+            <td>{{ emp.email }}</td>
+            <td>{{ emp.time_off_balance }}</td>
+            <td>{{ emp.used_time_off }}</td>
+            <td>{{ emp.remaining_time_off }}</td>
+            <td>
+              {% set usage_pct = 0 %}
+              {% if emp.time_off_balance > 0 %}
+                {% set usage_pct = (emp.used_time_off / emp.time_off_balance) * 100 %}
+              {% endif %}
+              <div class="progress" style="height: 20px;">
+                <div class="progress-bar bg-info" role="progressbar" style="width: {{ usage_pct }}%;" aria-valuenow="{{ usage_pct }}" aria-valuemin="0" aria-valuemax="100">
+                  {{ usage_pct|round(1) }}%
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
   
   <!-- Integration Management Link -->
-  <div class="mb-4">
+  <div class="mb-4 text-center">
     <a href="{{ url_for('hr.integrations') }}" class="btn btn-primary">HRIS/Payroll Integration</a>
   </div>
 </div>

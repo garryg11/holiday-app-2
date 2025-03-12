@@ -45,7 +45,6 @@ def new_holiday_request():
     - POST: Process form data, validate dates, and save request to DB.
     Redirects to Employee Dashboard if employee, or HR Dashboard if HR.
     """
-    # Allow both employees and HR to submit holiday requests.
     if current_user.role not in ['employee', 'hr']:
         flash("Only employees or HR can submit new holiday requests.", "danger")
         return redirect(url_for('main.calendar'))
@@ -56,7 +55,6 @@ def new_holiday_request():
         request_type = request.form.get('request_type')
         comment = request.form.get('comment', '')
         
-        # Convert date strings to Python date objects
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
@@ -82,7 +80,6 @@ def new_holiday_request():
         
         flash('Holiday request submitted successfully.', 'success')
         
-        # Redirect based on role: employee to employee dashboard, HR to HR dashboard.
         if current_user.role == 'employee':
             return redirect(url_for('main.employee_dashboard'))
         else:  # current_user.role == 'hr'
@@ -170,7 +167,7 @@ def export_reports():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-# ------------------- UPDATED: Color-Coded Calendar Endpoint ------------------- #
+# ------------------- Color-Coded Calendar Endpoint ------------------- #
 @main_bp.route('/api/calendar_events')
 @login_required
 def api_calendar_events():
@@ -180,28 +177,25 @@ def api_calendar_events():
     Each event includes a "color" property based on the request type.
     """
     events = []
-    # Get filter from query string; default is None.
     request_type_filter = request.args.get('request_type', None)
     
-    # Build the query for approved requests.
     query = HolidayRequest.query.filter_by(status='approved')
     if request_type_filter and request_type_filter.lower() != 'all':
-        # Use case-insensitive filtering
         query = query.filter(HolidayRequest.request_type.ilike(request_type_filter))
     
     approved_requests = query.all()
     for req in approved_requests:
         req_type = req.request_type.lower()
         if req_type == 'vacation':
-            color = '#28a745'  # Green for vacation
+            color = '#28a745'
         elif req_type == 'sick leave':
-            color = '#dc3545'  # Red for sick leave
+            color = '#dc3545'
         elif req_type == 'time compensation':
-            color = '#ffc107'  # Yellow for time compensation
+            color = '#ffc107'
         elif req_type == 'personal leave':
-            color = '#17a2b8'  # Teal for personal leave
+            color = '#17a2b8'
         else:
-            color = '#007bff'  # Default blue
+            color = '#007bff'
         events.append({
             "title": f"{req.user.email} - {req.request_type}",
             "start": req.start_date.isoformat(),
@@ -209,8 +203,33 @@ def api_calendar_events():
             "color": color
         })
     return jsonify(events=events)
+# ---------------------------------------------------------------------- #
 
-# ------------------------------------------------------------------------------ #
+# --------------- NEW ENDPOINT FOR REVERSED CHRONOLOGICAL LIST --------- #
+@main_bp.route('/api/reversed_events')
+@login_required
+def api_reversed_events():
+    """
+    Returns all approved holiday requests in descending (newest-first) order
+    by start date. This is used by reversed_list.html to show fully reversed
+    chronological events.
+    """
+    events_data = []
+    approved_requests = HolidayRequest.query.filter_by(status='approved').all()
+    
+    # Build a list of event dicts
+    for req in approved_requests:
+        events_data.append({
+            "title": f"{req.user.email} - {req.request_type}",
+            "start": req.start_date.isoformat(),
+            "end": (req.end_date + timedelta(days=1)).isoformat()
+        })
+    
+    # Sort by start date descending
+    events_data.sort(key=lambda e: e["start"], reverse=True)
+    
+    return jsonify(events=events_data)
+# ---------------------------------------------------------------------- #
 
 @main_bp.route('/currently_on_leave')
 @login_required
@@ -312,3 +331,40 @@ def manager_dashboard():
         flash("Access denied: you are not a manager.", "danger")
         return redirect(url_for('main.calendar'))
     return render_template('manager_dashboard.html')
+
+# ... (all your existing routes remain unchanged above)
+
+# ------------------- NEW ENDPOINT FOR REVERSED CALENDAR EVENTS ------------------- #
+@main_bp.route('/api/reversed_calendar_events')
+@login_required
+def api_reversed_calendar_events():
+    """
+    Returns approved holiday requests as JSON events in descending order (newest first)
+    by start date.
+    """
+    events_data = []
+    approved_requests = HolidayRequest.query.filter_by(status='approved').all()
+    
+    # Build a list of event dictionaries
+    for req in approved_requests:
+        events_data.append({
+            "title": f"{req.user.email} - {req.request_type}",
+            "start": req.start_date.isoformat(),
+            "end": (req.end_date + timedelta(days=1)).isoformat()
+        })
+    
+    # Sort the events by start date descending (newest first)
+    events_data.sort(key=lambda e: e["start"], reverse=True)
+    
+    return jsonify(events=events_data)
+# ------------------------------------------------------------------------------ #
+
+# ------------------- NEW ROUTE FOR REVERSED LIST PAGE ------------------- #
+@main_bp.route('/reversed_list')
+@login_required
+def reversed_list_page():
+    """
+    Renders a page displaying approved holiday requests in descending order (newest first).
+    """
+    return render_template('reversed_list.html')
+# ------------------------------------------------------------------------------ #
