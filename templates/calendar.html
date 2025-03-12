@@ -23,6 +23,14 @@
     </select>
   </div>
   
+  <!-- Toggle for List View Order -->
+  <div class="mb-3">
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="sortOrderToggle" checked>
+      <label class="form-check-label" for="sortOrderToggle">Sort Newest First</label>
+    </div>
+  </div>
+  
   <!-- Calendar container -->
   <div id="calendar"></div>
 </div>
@@ -35,11 +43,24 @@
   document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
     
-    // Function to fetch events based on filter selection
+    // Global variable to store list order preference.
+    // true means newest first, false means oldest first.
+    var listOrderDesc = true;
+    
+    // Update listOrderDesc when the toggle changes.
+    document.getElementById('sortOrderToggle').addEventListener('change', function() {
+      listOrderDesc = this.checked;
+      // If current view is List, force re-render by refetching events.
+      if (calendar.view.type === 'listWeek') {
+        calendar.refetchEvents();
+      }
+    });
+    
+    // Function to fetch events based on filter selection.
     function fetchEvents(info, successCallback, failureCallback) {
       var filterValue = document.getElementById('filterType').value;
       var eventsUrl = "{{ url_for('main.api_calendar_events') }}";
-      if(filterValue && filterValue !== "all"){
+      if (filterValue && filterValue !== "all") {
          eventsUrl += "?request_type=" + encodeURIComponent(filterValue);
       }
       fetch(eventsUrl)
@@ -48,7 +69,7 @@
          .catch(error => failureCallback(error));
     }
     
-    // Initialize FullCalendar with multiple views and enhanced navigation.
+    // Initialize FullCalendar.
     var calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'dayGridMonth',
       headerToolbar: {
@@ -56,11 +77,30 @@
         center: 'title',
         right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
       },
-      // Customize list view button text if desired.
+      // Configure the List view to sort events based on the toggle value.
       views: {
-        listWeek: { buttonText: 'List' }
+        listWeek: {
+          buttonText: 'List',
+          eventOrder: function(a, b) {
+            if (listOrderDesc) {
+              // Newest first: sort descending by start date.
+              return new Date(b.start).getTime() - new Date(a.start).getTime();
+            } else {
+              // Oldest first: sort ascending by start date.
+              return new Date(a.start).getTime() - new Date(b.start).getTime();
+            }
+          }
+        }
       },
+      // Day view enhancements.
+      slotMinTime: '08:00:00',
+      slotMaxTime: '18:00:00',
+      nowIndicator: true,
+      allDaySlot: true,
+      allDayText: 'All Day',
+      
       events: fetchEvents,
+      
       eventClick: function(info) {
         info.jsEvent.preventDefault();
         alert('Event: ' + info.event.title + '\nStart: ' + info.event.start.toLocaleDateString());
@@ -69,7 +109,7 @@
     
     calendar.render();
     
-    // Refetch events when filter selection changes.
+    // Refetch events when the filter selection changes.
     document.getElementById('filterType').addEventListener('change', function() {
       calendar.refetchEvents();
     });
