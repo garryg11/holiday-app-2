@@ -2,6 +2,7 @@
 {% block content %}
 <div class="container py-4">
   <h2>Leave Calendar</h2>
+  
   <!-- AI-powered leave suggestion -->
   <p><strong>AI-Powered Suggestion:</strong> {{ suggestion }}</p>
   
@@ -34,7 +35,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
     
-    // Function to fetch events based on the filter selection.
+    // Function to fetch events based on filter selection
     function fetchEvents(info, successCallback, failureCallback) {
       var filterValue = document.getElementById('filterType').value;
       var eventsUrl = "{{ url_for('main.api_calendar_events') }}";
@@ -47,13 +48,17 @@
          .catch(error => failureCallback(error));
     }
     
-    // Initialize FullCalendar with events function.
+    // Initialize FullCalendar with multiple views and enhanced navigation.
     var calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'dayGridMonth',
       headerToolbar: {
         left: 'prev,next today',
         center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+      },
+      // Customize list view button text if desired.
+      views: {
+        listWeek: { buttonText: 'List' }
       },
       events: fetchEvents,
       eventClick: function(info) {
@@ -64,7 +69,7 @@
     
     calendar.render();
     
-    // Refetch events when the filter selection changes.
+    // Refetch events when filter selection changes.
     document.getElementById('filterType').addEventListener('change', function() {
       calendar.refetchEvents();
     });
