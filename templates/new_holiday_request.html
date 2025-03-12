@@ -76,8 +76,10 @@
         <!-- Action Buttons -->
         <div class="d-flex justify-content-between">
           <button type="submit" class="btn btn-primary">Submit Request</button>
-          <!-- Cancel Button redirects to Employee Dashboard -->
-          <a href="{{ url_for('main.employee_dashboard') }}" class="btn btn-danger">Cancel Request</a>
+          <!-- Cancel Button: Redirects HR users to main.home and employees to employee dashboard -->
+          <a href="{% if current_user.role == 'hr' %}{{ url_for('main.home') }}{% else %}{{ url_for('main.employee_dashboard') }}{% endif %}" class="btn btn-danger">
+            Cancel Request
+          </a>
         </div>
       </form>
     </div>

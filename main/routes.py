@@ -40,13 +40,14 @@ def holiday_requests():
 @login_required
 def new_holiday_request():
     """
-    Allows an employee to submit a new holiday request.
+    Allows an employee or HR to submit a new holiday request.
     - GET: Render the form.
     - POST: Process form data, validate dates, and save request to DB.
-    Redirects to Employee Dashboard on success.
+    Redirects to Employee Dashboard if employee, or HR Dashboard if HR.
     """
-    if current_user.role != 'employee':
-        flash("Only employees can submit new holiday requests.", "danger")
+    # Allow both employees and HR to submit holiday requests.
+    if current_user.role not in ['employee', 'hr']:
+        flash("Only employees or HR can submit new holiday requests.", "danger")
         return redirect(url_for('main.calendar'))
     
     if request.method == 'POST':
@@ -80,7 +81,12 @@ def new_holiday_request():
         db.session.commit()
         
         flash('Holiday request submitted successfully.', 'success')
-        return redirect(url_for('main.employee_dashboard'))
+        
+        # Redirect based on role: employee to employee dashboard, HR to HR dashboard.
+        if current_user.role == 'employee':
+            return redirect(url_for('main.employee_dashboard'))
+        else:  # current_user.role == 'hr'
+            return redirect(url_for('hr.dashboard'))
     
     return render_template('new_holiday_request.html')
 
@@ -164,18 +170,47 @@ def export_reports():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+# ------------------- UPDATED: Color-Coded Calendar Endpoint ------------------- #
 @main_bp.route('/api/calendar_events')
 @login_required
 def api_calendar_events():
+    """
+    Returns approved holiday requests as JSON events.
+    Optionally filters by request_type if provided as a query parameter.
+    Each event includes a "color" property based on the request type.
+    """
     events = []
-    approved_requests = HolidayRequest.query.filter_by(status='approved').all()
+    # Get filter from query string; default is None.
+    request_type_filter = request.args.get('request_type', None)
+    
+    # Build the query for approved requests.
+    query = HolidayRequest.query.filter_by(status='approved')
+    if request_type_filter and request_type_filter.lower() != 'all':
+        # Use case-insensitive filtering
+        query = query.filter(HolidayRequest.request_type.ilike(request_type_filter))
+    
+    approved_requests = query.all()
     for req in approved_requests:
+        req_type = req.request_type.lower()
+        if req_type == 'vacation':
+            color = '#28a745'  # Green for vacation
+        elif req_type == 'sick leave':
+            color = '#dc3545'  # Red for sick leave
+        elif req_type == 'time compensation':
+            color = '#ffc107'  # Yellow for time compensation
+        elif req_type == 'personal leave':
+            color = '#17a2b8'  # Teal for personal leave
+        else:
+            color = '#007bff'  # Default blue
         events.append({
             "title": f"{req.user.email} - {req.request_type}",
             "start": req.start_date.isoformat(),
-            "end": (req.end_date + timedelta(days=1)).isoformat()
+            "end": (req.end_date + timedelta(days=1)).isoformat(),
+            "color": color
         })
     return jsonify(events=events)
+
+# ------------------------------------------------------------------------------ #
 
 @main_bp.route('/currently_on_leave')
 @login_required
@@ -241,7 +276,6 @@ def delete_holiday_request(request_id):
     flash("Holiday request deleted successfully.", "success")
     return redirect(url_for('main.holiday_requests'))
 
-# ---------------- Updated Employee Dashboard Route ----------------
 @main_bp.route('/employee_dashboard')
 @login_required
 def employee_dashboard():
@@ -253,7 +287,6 @@ def employee_dashboard():
         flash("Access denied: you are not an employee.", "danger")
         return redirect(url_for('main.calendar'))
     
-    # Retrieve up to 5 of the most recent requests for the logged-in user
     recent_requests = (
         HolidayRequest.query
         .filter_by(user_id=current_user.id)

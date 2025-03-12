@@ -13,18 +13,20 @@
     
     <!-- Custom Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-
-    <!-- DataTables CSS -->
+    
+    <!-- DataTables CSS (if used) -->
     <link 
       rel="stylesheet" 
       href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"
     >
-    <!-- Bootstrap Toggle CSS (for on/off switches) -->
+    
+    <!-- Bootstrap Toggle CSS (if used for toggle switches) -->
     <link 
       href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" 
       rel="stylesheet"
     >
-    <!-- Chart.js (for charts) -->
+    
+    <!-- Chart.js (if used for charts) -->
     <script 
       src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js">
     </script>
@@ -34,8 +36,15 @@
     <!-- Responsive Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
       <div class="container-fluid">
+        
         <!-- Logo & App Title -->
-        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.calendar') }}">
+        {% if current_user.is_authenticated and current_user.role == 'hr' %}
+          <!-- HR users: link to main.home -->
+          <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.home') }}">
+        {% else %}
+          <!-- All other users: link to main.calendar -->
+          <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.calendar') }}">
+        {% endif %}
           <img 
             src="{{ url_for('static', filename='img/logo.png') }}" 
             alt="Company Logo" 
@@ -154,12 +163,12 @@
       src="https://code.jquery.com/jquery-3.6.0.min.js">
     </script>
     
-    <!-- DataTables JS -->
+    <!-- DataTables JS (if used) -->
     <script 
       src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js">
     </script>
     
-    <!-- Bootstrap Toggle JS (Optional for toggle switches) -->
+    <!-- Bootstrap Toggle JS (if used for toggles) -->
     <script 
       src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js">
     </script>

@@ -1,13 +1,27 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container">
+<div class="container py-4">
   <h2>Leave Calendar</h2>
   <!-- AI-powered leave suggestion -->
   <p><strong>AI-Powered Suggestion:</strong> {{ suggestion }}</p>
+  
   <!-- Display available balance for employees -->
   {% if current_user.role == 'employee' %}
     <p><strong>Available Balance:</strong> {{ current_user.time_off_balance }} days</p>
   {% endif %}
+  
+  <!-- Filter Section -->
+  <div class="mb-3">
+    <label for="filterType" class="form-label">Filter by Request Type:</label>
+    <select id="filterType" class="form-select" style="width: auto;">
+      <option value="all">All</option>
+      <option value="vacation">Vacation</option>
+      <option value="sick leave">Sick Leave</option>
+      <option value="time compensation">Time Compensation</option>
+      <option value="personal leave">Personal Leave</option>
+    </select>
+  </div>
+  
   <!-- Calendar container -->
   <div id="calendar"></div>
 </div>
@@ -19,6 +33,21 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
+    
+    // Function to fetch events based on the filter selection.
+    function fetchEvents(info, successCallback, failureCallback) {
+      var filterValue = document.getElementById('filterType').value;
+      var eventsUrl = "{{ url_for('main.api_calendar_events') }}";
+      if(filterValue && filterValue !== "all"){
+         eventsUrl += "?request_type=" + encodeURIComponent(filterValue);
+      }
+      fetch(eventsUrl)
+         .then(response => response.json())
+         .then(data => successCallback(data.events))
+         .catch(error => failureCallback(error));
+    }
+    
+    // Initialize FullCalendar with events function.
     var calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'dayGridMonth',
       headerToolbar: {
@@ -26,9 +55,19 @@
         center: 'title',
         right: 'dayGridMonth,timeGridWeek,timeGridDay'
       },
-      events: '/api/calendar_events'
+      events: fetchEvents,
+      eventClick: function(info) {
+        info.jsEvent.preventDefault();
+        alert('Event: ' + info.event.title + '\nStart: ' + info.event.start.toLocaleDateString());
+      }
     });
+    
     calendar.render();
+    
+    // Refetch events when the filter selection changes.
+    document.getElementById('filterType').addEventListener('change', function() {
+      calendar.refetchEvents();
+    });
   });
 </script>
 {% endblock %}

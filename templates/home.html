@@ -1,48 +1,38 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container py-4">
-  <!-- Hero / Welcome Section -->
+  <!-- Hero Section -->
   <div class="row mb-4">
     <div class="col">
-      <div class="p-5 mb-4 bg-light rounded-3 shadow">
-        <div class="container-fluid py-5 text-center">
-          <h1 class="display-5 fw-bold">Welcome to the Holiday Approval App!</h1>
-          {% if current_user.is_authenticated %}
-            {% if current_user.role == 'employee' %}
-              <p class="col-md-8 mx-auto fs-5">
-                Hello, {{ current_user.email }}! Your current time off balance is
-                <strong>{{ current_user.time_off_balance }}</strong> days.
-              </p>
-            {% else %}
-              <p class="col-md-8 mx-auto fs-5">
-                Hello, {{ current_user.email }}! Manage holiday requests, view upcoming holidays,
-                and stay updated with your team’s availability.
-              </p>
-            {% endif %}
-          {% else %}
-            <p class="col-md-8 mx-auto fs-5">
-              This is the home page. More features will be added soon. Please log in to manage
-              your holiday requests and view team availability.
+      <div class="p-5 mb-4 bg-light rounded-3 shadow text-center">
+        <h1 class="display-5 fw-bold">Welcome to the Holiday Approval App!</h1>
+        {% if current_user.is_authenticated %}
+          <p class="fs-5">
+            Hello, {{ current_user.email }}! Manage your holiday requests and stay updated with your team.
+          </p>
+          {% if current_user.role == 'hr' %}
+            <p class="fs-5">
+              Your current time off balance is: <strong>{{ current_user.time_off_balance }}</strong> days.
             </p>
           {% endif %}
-          <button type="button" class="btn btn-primary btn-lg mt-3">Test Button</button>
-        </div>
+        {% else %}
+          <p class="fs-5">Please log in to manage your holiday requests and view important updates.</p>
+        {% endif %}
       </div>
     </div>
   </div>
-
+  
   <!-- Navigation Shortcuts (only if logged in) -->
   {% if current_user.is_authenticated %}
   <div class="row mb-4">
-    <!-- Shortcut 1: Submit a New Request -->
+    <!-- Shortcut 1: Request Leave -->
     <div class="col-md-4 mb-3">
       <div class="card shadow h-100">
         <div class="card-body text-center">
-          <h5 class="card-title">Submit a New Request</h5>
-          <p class="card-text">Quickly request time off or vacation days.</p>
-          <a href="{{ url_for('main.new_holiday_request') }}" class="btn btn-primary">
-            Request Leave
-          </a>
+          <h5 class="card-title">Request Leave</h5>
+          <p class="card-text">Submit a new holiday request easily.</p>
+          <!-- IMPORTANT: This link calls main.new_holiday_request -->
+          <a href="{{ url_for('main.new_holiday_request') }}" class="btn btn-primary">Request Leave</a>
         </div>
       </div>
     </div>
@@ -52,19 +42,19 @@
         <div class="card-body text-center">
           <h5 class="card-title">View Calendar</h5>
           <p class="card-text">See all approved leaves and upcoming holidays.</p>
-          <a href="{{ url_for('main.calendar') }}" class="btn btn-success">
-            Go to Calendar
-          </a>
+          <a href="{{ url_for('main.calendar') }}" class="btn btn-success">Calendar</a>
         </div>
       </div>
     </div>
-    <!-- Shortcut 3: Check Dashboard -->
+    <!-- Shortcut 3: Dashboard -->
     <div class="col-md-4 mb-3">
       <div class="card shadow h-100">
         <div class="card-body text-center">
-          <h5 class="card-title">Check Dashboard</h5>
-          <p class="card-text">See your personal or role-based overview.</p>
-          {% if current_user.role == 'employee' %}
+          <h5 class="card-title">Dashboard</h5>
+          <p class="card-text">Access your personal overview.</p>
+          {% if current_user.role == 'hr' %}
+            <a href="{{ url_for('hr.dashboard') }}" class="btn btn-info">HR Dashboard</a>
+          {% elif current_user.role == 'employee' %}
             <a href="{{ url_for('main.employee_dashboard') }}" class="btn btn-info">Employee Dashboard</a>
           {% elif current_user.role == 'supervisor' %}
             <a href="{{ url_for('main.supervisor_dashboard') }}" class="btn btn-info">Supervisor Dashboard</a>
@@ -72,13 +62,20 @@
             <a href="{{ url_for('main.manager_dashboard') }}" class="btn btn-info">Manager Dashboard</a>
           {% elif current_user.role == 'admin' %}
             <a href="{{ url_for('admin.dashboard') }}" class="btn btn-info">Admin Dashboard</a>
-          {% elif current_user.role == 'hr' %}
-            <a href="{{ url_for('hr.dashboard') }}" class="btn btn-info">HR Dashboard</a>
           {% endif %}
         </div>
       </div>
     </div>
   </div>
   {% endif %}
+  
+  <!-- Additional Info / Announcements -->
+  <div class="row">
+    <div class="col">
+      <div class="alert alert-info text-center">
+        Tip: Remember to submit your holiday request at least 2 weeks in advance.
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
