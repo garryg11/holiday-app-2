@@ -9,6 +9,7 @@ import pandas as pd
 from functools import wraps
 from sqlalchemy import or_
 import secrets
+import calendar
 
 main_bp = Blueprint('main', __name__)
 
@@ -212,18 +213,20 @@ def api_calendar_events():
 @login_required
 def currently_on_leave():
     today = date.today()
-    # Get the current page from the URL query (default to 1)
+    # Get current page number from query parameters, defaulting to 1
     page = request.args.get('page', 1, type=int)
-    # Build the query for approved requests that overlap today
+    
+    # Build the query for approved holiday requests overlapping today
     ongoing_requests_query = HolidayRequest.query.filter(
         HolidayRequest.status == 'approved',
         HolidayRequest.start_date <= today,
         HolidayRequest.end_date >= today
     ).order_by(HolidayRequest.start_date.asc())
-    # Paginate the results, e.g., 15 per page
+    
+    # Paginate the results (15 per page, adjust as needed)
     ongoing_requests = ongoing_requests_query.paginate(page=page, per_page=15, error_out=False)
+    
     return render_template('currently_on_leave.html', ongoing_requests=ongoing_requests)
-
 
 @main_bp.route('/holiday_request/edit/<int:request_id>', methods=['GET', 'POST'])
 @login_required
@@ -315,6 +318,56 @@ def manager_dashboard():
         return redirect(url_for('main.calendar'))
     return render_template('manager_dashboard.html')
 
+# ------------------- NEW MANAGEMENT DASHBOARD ------------------- #
+@main_bp.route('/management_dashboard')
+@login_required
+def management_dashboard():
+    """
+    A specialized dashboard for management (role 'management') 
+    with high-level insights.
+    """
+    if current_user.role not in ['admin', 'management']:
+        flash("Access denied: Management Dashboard is restricted.", "danger")
+        return redirect(url_for('main.calendar'))
+    
+    # Overview & KPIs
+    total_employees = User.query.count()
+    total_requests = HolidayRequest.query.count()
+    approved_requests = HolidayRequest.query.filter_by(status='approved').count()
+    pending_requests = HolidayRequest.query.filter_by(status='pending').count()
+    
+    # Departmental Analysis
+    dept_stats = {}
+    approved_requests_list = HolidayRequest.query.filter_by(status='approved').all()
+    for req in approved_requests_list:
+        dept = req.user.department if req.user.department else "Unassigned"
+        dept_stats[dept] = dept_stats.get(dept, 0) + 1
+
+    # Trend Analysis for current year
+    current_year = datetime.now().year
+    trend_data = {m: 0 for m in range(1, 13)}
+    all_requests = HolidayRequest.query.filter(
+        HolidayRequest.start_date >= date(current_year, 1, 1),
+        HolidayRequest.start_date <= date(current_year, 12, 31)
+    ).all()
+    for req in all_requests:
+        month = req.start_date.month
+        trend_data[month] += 1
+    
+    import calendar
+    month_names = [calendar.month_abbr[m] for m in range(1, 13)]
+    monthly_counts = [trend_data[m] for m in range(1, 13)]
+    
+    return render_template('management_dashboard.html',
+                           total_employees=total_employees,
+                           total_requests=total_requests,
+                           approved_requests=approved_requests,
+                           pending_requests=pending_requests,
+                           dept_stats=dept_stats,
+                           month_names=month_names,
+                           monthly_counts=monthly_counts,
+                           current_year=current_year)
+
 # ------------------- NEW ENDPOINT FOR REVERSED CALENDAR EVENTS ------------------- #
 @main_bp.route('/api/reversed_calendar_events')
 @login_required
@@ -338,7 +391,7 @@ def api_reversed_calendar_events():
     events_data.sort(key=lambda e: e["start"], reverse=True)
     
     return jsonify(events=events_data)
-# ------------------------------------------------------------------------------ #
+# ---------------------------------------------------------------------- #
 
 # ------------------- NEW ROUTE FOR REVERSED LIST PAGE ------------------- #
 @main_bp.route('/reversed_list')
@@ -348,4 +401,4 @@ def reversed_list_page():
     Renders a page displaying approved holiday requests in descending order (newest first).
     """
     return render_template('reversed_list.html')
-# ------------------------------------------------------------------------------ #
+# ---------------------------------------------------------------------- #

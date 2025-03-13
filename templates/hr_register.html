@@ -1,61 +1,91 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container">
+<div class="container py-4">
   <h2>Register New User (HR)</h2>
   <form method="POST" action="{{ url_for('hr.register') }}">
-    <!-- Personal Information -->
+    
+    <!-- Optional Employee ID Number -->
     <div class="mb-3">
-      <label for="employee_id" class="form-label">Employee ID Number</label>
+      <label for="employee_id" class="form-label">Employee ID Number (optional)</label>
       <input type="text" class="form-control" id="employee_id" name="employee_id">
     </div>
+    
+    <!-- Full Name -->
     <div class="mb-3">
       <label for="name" class="form-label">Full Name</label>
       <input type="text" class="form-control" id="name" name="name" required>
     </div>
+    
+    <!-- Email -->
     <div class="mb-3">
       <label for="email" class="form-label">Email</label>
       <input type="email" class="form-control" id="email" name="email" required>
     </div>
+    
+    <!-- Cost Center -->
     <div class="mb-3">
-      <label for="cost_center" class="form-label">Cost Center</label>
+      <label for="cost_center" class="form-label">Cost Center (optional)</label>
       <input type="text" class="form-control" id="cost_center" name="cost_center">
     </div>
+    
+    <!-- Department -->
     <div class="mb-3">
-      <label for="department" class="form-label">Department</label>
+      <label for="department" class="form-label">Department (optional)</label>
       <input type="text" class="form-control" id="department" name="department">
     </div>
     
-    <!-- Account Details -->
+    <!-- Start Date for Prorated (Aliquot) Calculation -->
+    <div class="mb-3">
+      <label for="start_date" class="form-label">Start Date (optional)</label>
+      <input type="date" class="form-control" id="start_date" name="start_date">
+      <small class="text-muted">
+        If provided, leave entitlement will be prorated based on remaining days of the year.
+      </small>
+    </div>
+    
+    <!-- Role -->
     <div class="mb-3">
       <label for="role" class="form-label">Role</label>
       <select class="form-select" id="role" name="role" required>
         <option value="employee">Employee</option>
         <option value="supervisor">Supervisor</option>
         <option value="manager">Manager</option>
-        <!-- If your application allows these, but remember we restrict HR from creating them -->
-        <option value="sub-admin">Sub-Admin</option>
-        <option value="admin">Admin</option>
-        <option value="hr">HR</option>
+        <option value="management">Management</option>
       </select>
     </div>
     
-    <!-- Time-Off Fields -->
+    <!-- Time-Off Balance (days) -->
     <div class="mb-3">
       <label for="time_off_balance" class="form-label">Time-Off Balance (days)</label>
-      <input type="number" step="0.1" class="form-control" id="time_off_balance" name="time_off_balance" value="20.0" required>
-      <div class="form-text">Enter the number of leave days allocated (default is 20 days).</div>
-    </div>
-    <div class="mb-3">
-      <label for="time_off_balance_hours" class="form-label">Time-Off Balance (hours)</label>
-      <input type="number" step="1" class="form-control" id="time_off_balance_hours" name="time_off_balance_hours" value="160" readonly>
-      <div class="form-text">Automatically calculated as (days * 8).</div>
+      <input 
+        type="number" 
+        step="0.1" 
+        class="form-control" 
+        id="time_off_balance" 
+        name="time_off_balance" 
+        value="20.0" 
+        required
+      >
+      <small class="text-muted">
+        Enter the number of leave days allocated (default is 20 days).
+      </small>
     </div>
     
-    <!-- NEW: Start Date (For Aliquot Calculation) -->
+    <!-- Time-Off Balance (hours) - auto-calculated at 7.7 hours/day -->
     <div class="mb-3">
-      <label for="start_date" class="form-label">Start Date (YYYY-MM-DD)</label>
-      <input type="date" class="form-control" id="start_date" name="start_date">
-      <div class="form-text">If provided, leave will be prorated based on remaining days in the year.</div>
+      <label for="time_off_balance_hours" class="form-label">Time-Off Balance (hours)</label>
+      <input 
+        type="number" 
+        step="0.1" 
+        class="form-control" 
+        id="time_off_balance_hours" 
+        name="time_off_balance_hours" 
+        value="154.0" 
+        readonly
+      >
+      <small class="text-muted">
+        Automatically calculated as (days * 7.7).
+      </small>
     </div>
     
     <!-- Action Buttons -->
@@ -65,15 +95,16 @@
 </div>
 
 <script>
-  // Optional: Automatically update "Time-Off Balance (hours)" as user types days.
+  // Using a 38.5-hour workweek => 7.7 hours per day
+  const HOURS_PER_DAY = 7.7;
+  
   const daysInput = document.getElementById('time_off_balance');
   const hoursInput = document.getElementById('time_off_balance_hours');
   
-  if (daysInput && hoursInput) {
-    daysInput.addEventListener('input', () => {
-      const days = parseFloat(daysInput.value) || 0;
-      hoursInput.value = (days * 8).toFixed(0);
-    });
-  }
+  daysInput.addEventListener('input', function() {
+    const days = parseFloat(daysInput.value) || 0;
+    // Calculate hours using 7.7 hours per day
+    hoursInput.value = (days * HOURS_PER_DAY).toFixed(1);
+  });
 </script>
 {% endblock %}

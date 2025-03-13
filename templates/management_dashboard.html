@@ -1,0 +1,133 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-4">Management Dashboard</h2>
+  
+  <!-- Overview & KPIs Section -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card shadow text-center">
+        <div class="card-header">Total Employees</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ total_employees }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow text-center">
+        <div class="card-header">Total Requests</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ total_requests }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow text-center">
+        <div class="card-header">Approved Requests</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ approved_requests }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow text-center">
+        <div class="card-header">Pending Requests</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ pending_requests }}</h5>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Departmental Analysis Section -->
+  <div class="card shadow mb-4">
+    <div class="card-header">Departmental Analysis</div>
+    <div class="card-body">
+      <canvas id="deptChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Trend Analysis & Forecasting Section -->
+  <div class="card shadow mb-4">
+    <div class="card-header">Monthly Holiday Requests ({{ current_year }})</div>
+    <div class="card-body">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Interactive Reports -->
+  <div class="text-center mb-4">
+    <a href="{{ url_for('main.export_reports') }}" class="btn btn-outline-primary">Export Reports</a>
+  </div>
+</div>
+
+<!-- Include Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Departmental Analysis: prepare data for a pie chart
+  var deptLabels = [];
+  var deptData = [];
+  {% for dept, count in dept_stats.items() %}
+    deptLabels.push("{{ dept }}");
+    deptData.push({{ count }});
+  {% endfor %}
+  
+  var ctxDept = document.getElementById('deptChart').getContext('2d');
+  var deptChart = new Chart(ctxDept, {
+      type: 'pie',
+      data: {
+          labels: deptLabels,
+          datasets: [{
+              data: deptData,
+              backgroundColor: [
+                  '#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6f42c1', '#fd7e14'
+              ]
+          }]
+      },
+      options: {
+          responsive: true,
+          plugins: {
+              legend: {
+                  position: 'bottom'
+              }
+          }
+      }
+  });
+  
+  // Trend Analysis: prepare data for a line chart
+  var monthNames = {{ month_names|tojson }};
+  var monthlyCounts = {{ monthly_counts|tojson }};
+  
+  var ctxTrend = document.getElementById('trendChart').getContext('2d');
+  var trendChart = new Chart(ctxTrend, {
+      type: 'line',
+      data: {
+          labels: monthNames,
+          datasets: [{
+              label: 'Holiday Requests',
+              data: monthlyCounts,
+              fill: false,
+              borderColor: '#007bff',
+              tension: 0.1
+          }]
+      },
+      options: {
+          responsive: true,
+          scales: {
+              y: {
+                  beginAtZero: true,
+                  ticks: {
+                      precision: 0
+                  }
+              }
+          },
+          plugins: {
+              legend: {
+                  position: 'bottom'
+              }
+          }
+      }
+  });
+</script>
+{% endblock %}
