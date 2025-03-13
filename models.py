@@ -22,7 +22,8 @@ class User(UserMixin, db.Model):
     
     @property
     def time_off_balance_hours(self):
-        return self.time_off_balance * 8
+        # Convert days to hours using 7.7 hours per day (38.5 hours per week / 5 days)
+        return self.time_off_balance * 7.7
     
     @property
     def used_time_off(self):

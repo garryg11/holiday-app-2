@@ -1,11 +1,14 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, jsonify, current_app
 from flask_login import login_required, current_user
-from models import HolidayRequest
+from models import HolidayRequest, User
 from datetime import timedelta, datetime, date
 from extensions import db, mail
 from flask_mail import Message
 import io
 import pandas as pd
+from functools import wraps
+from sqlalchemy import or_
+import secrets
 
 main_bp = Blueprint('main', __name__)
 
@@ -205,42 +208,22 @@ def api_calendar_events():
     return jsonify(events=events)
 # ---------------------------------------------------------------------- #
 
-# --------------- NEW ENDPOINT FOR REVERSED CHRONOLOGICAL LIST --------- #
-@main_bp.route('/api/reversed_events')
-@login_required
-def api_reversed_events():
-    """
-    Returns all approved holiday requests in descending (newest-first) order
-    by start date. This is used by reversed_list.html to show fully reversed
-    chronological events.
-    """
-    events_data = []
-    approved_requests = HolidayRequest.query.filter_by(status='approved').all()
-    
-    # Build a list of event dicts
-    for req in approved_requests:
-        events_data.append({
-            "title": f"{req.user.email} - {req.request_type}",
-            "start": req.start_date.isoformat(),
-            "end": (req.end_date + timedelta(days=1)).isoformat()
-        })
-    
-    # Sort by start date descending
-    events_data.sort(key=lambda e: e["start"], reverse=True)
-    
-    return jsonify(events=events_data)
-# ---------------------------------------------------------------------- #
-
 @main_bp.route('/currently_on_leave')
 @login_required
 def currently_on_leave():
     today = date.today()
-    ongoing_requests = HolidayRequest.query.filter(
+    # Get the current page from the URL query (default to 1)
+    page = request.args.get('page', 1, type=int)
+    # Build the query for approved requests that overlap today
+    ongoing_requests_query = HolidayRequest.query.filter(
         HolidayRequest.status == 'approved',
         HolidayRequest.start_date <= today,
         HolidayRequest.end_date >= today
-    ).all()
+    ).order_by(HolidayRequest.start_date.asc())
+    # Paginate the results, e.g., 15 per page
+    ongoing_requests = ongoing_requests_query.paginate(page=page, per_page=15, error_out=False)
     return render_template('currently_on_leave.html', ongoing_requests=ongoing_requests)
+
 
 @main_bp.route('/holiday_request/edit/<int:request_id>', methods=['GET', 'POST'])
 @login_required
@@ -331,8 +314,6 @@ def manager_dashboard():
         flash("Access denied: you are not a manager.", "danger")
         return redirect(url_for('main.calendar'))
     return render_template('manager_dashboard.html')
-
-# ... (all your existing routes remain unchanged above)
 
 # ------------------- NEW ENDPOINT FOR REVERSED CALENDAR EVENTS ------------------- #
 @main_bp.route('/api/reversed_calendar_events')

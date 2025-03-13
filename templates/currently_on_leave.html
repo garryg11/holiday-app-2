@@ -1,32 +1,70 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container">
+<div class="container py-4">
   <h2>Currently On Leave</h2>
-  {% if ongoing_requests %}
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>Request ID</th>
-          <th>User Email</th>
-          <th>Start Date</th>
-          <th>End Date</th>
-          <th>Type</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for req in ongoing_requests %}
-        <tr>
-          <td>{{ req.id }}</td>
-          <td>{{ req.user.email }}</td>
-          <td>{{ req.start_date.strftime('%Y-%m-%d') }}</td>
-          <td>{{ req.end_date.strftime('%Y-%m-%d') }}</td>
-          <td>{{ req.request_type }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>No one is currently on leave.</p>
-  {% endif %}
+  <p>Below is a list of employees who are currently on leave.</p>
+  
+  <div class="card shadow mb-4">
+    <div class="card-header">Currently On Leave</div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Request ID</th>
+              <th>User Email</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Request Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for req in ongoing_requests.items %}
+            <tr>
+              <td>{{ req.id }}</td>
+              <td>{{ req.user.email }}</td>
+              <td>{{ req.start_date }}</td>
+              <td>{{ req.end_date }}</td>
+              <td>{{ req.request_type }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Pagination Controls -->
+  <nav aria-label="On Leave Pagination">
+    <ul class="pagination justify-content-center">
+      {% if ongoing_requests.has_prev %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('main.currently_on_leave', page=ongoing_requests.prev_num) }}">Previous</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+      {% endif %}
+      
+      {% for p in ongoing_requests.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+        {% if p %}
+          {% if p == ongoing_requests.page %}
+            <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+          {% else %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('main.currently_on_leave', page=p) }}">{{ p }}</a></li>
+          {% endif %}
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+      
+      {% if ongoing_requests.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('main.currently_on_leave', page=ongoing_requests.next_num) }}">Next</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+      {% endif %}
+    </ul>
+  </nav>
 </div>
 {% endblock %}
