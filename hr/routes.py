@@ -5,7 +5,7 @@ from datetime import datetime
 from extensions import db, bcrypt, mail
 from functools import wraps
 import secrets
-from sqlalchemy import or_
+from sqlalchemy import or_  # Needed for filtering by email or name
 
 hr_bp = Blueprint('hr', __name__, url_prefix='/hr')
 
@@ -27,15 +27,15 @@ def dashboard():
     total_requests = HolidayRequest.query.count()
     approved_requests = HolidayRequest.query.filter_by(status='approved').count()
     pending_requests = HolidayRequest.query.filter_by(status='pending').count()
-
-    # Retrieve page number and search query from URL parameters.
+    
+    # Get current page and search query from URL parameters.
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '', type=str)
     
     # Build a query for employees excluding high-privilege roles.
     employees_query = User.query.filter(~User.role.in_(['admin', 'sub-admin', 'hr']))
     if search:
-        # Search both by email and by name (case-insensitive).
+        # Filter by email or name (case-insensitive)
         employees_query = employees_query.filter(
             or_(
                 User.email.ilike(f"%{search}%"),
@@ -59,6 +59,7 @@ def dashboard():
 def register():
     """
     Allows HR to register new users.
+    If a start date is provided, the user's leave entitlement is prorated (aliquot).
     HR is not allowed to create accounts with role 'admin', 'sub-admin', or 'hr'.
     """
     if request.method == 'POST':
@@ -68,7 +69,25 @@ def register():
         role = request.form.get('role')
         cost_center = request.form.get('cost_center')
         department = request.form.get('department')
-        time_off_balance = float(request.form.get('time_off_balance') or 20.0)
+        # Get full entitlement from the form; default to 20.0 days if not provided.
+        full_leave_entitlement = float(request.form.get('time_off_balance') or 20.0)
+        
+        # Check if a start date is provided (for prorating leave)
+        start_date_str = request.form.get('start_date')
+        if start_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                # Calculate remaining days in the year (including start_date)
+                end_of_year = date(start_date.year, 12, 31)
+                days_remaining = (end_of_year - start_date).days + 1
+                # Prorate the leave: full entitlement * (days_remaining / 365)
+                prorated_leave = full_leave_entitlement * (days_remaining / 365)
+            except ValueError:
+                flash("Invalid start date format. Please use YYYY-MM-DD.", "danger")
+                return redirect(url_for('hr.register'))
+        else:
+            # If no start date provided, use full entitlement
+            prorated_leave = full_leave_entitlement
         
         # Prevent HR from creating high-privilege accounts.
         if role in ['admin', 'sub-admin', 'hr']:
@@ -79,7 +98,7 @@ def register():
             flash("User with that email already exists.", "danger")
             return redirect(url_for('hr.register'))
         
-        # Generate a system-generated temporary password.
+        # Generate a temporary password.
         temp_password = secrets.token_urlsafe(8)
         
         new_user = User(
@@ -88,7 +107,7 @@ def register():
             role=role,
             cost_center=cost_center,
             department=department,
-            time_off_balance=time_off_balance
+            time_off_balance=prorated_leave  # Set prorated leave entitlement
         )
         new_user.set_password(temp_password)
         new_user.force_password_reset = True
@@ -96,7 +115,7 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         
-        flash(f"New user registered successfully. Temporary password: {temp_password}", "success")
+        flash(f"New user registered successfully. Temporary password: {temp_password}. Leave entitlement set to {prorated_leave:.1f} days.", "success")
         return redirect(url_for('hr.dashboard'))
     
     return render_template('hr_register.html')
@@ -122,4 +141,14 @@ def toggle_user(user_id):
 @login_required
 @hr_required
 def integrations():
-    return render_template('hr_integrations.html')
+    last_sync = "March 11, 2025 14:30"  # Example value; replace with real data if available
+    sync_status = "Synchronized"         # Example value
+    return render_template('hr_integrations.html', last_sync=last_sync, sync_status=sync_status)
+
+@hr_bp.route('/sync_data')
+@login_required
+@hr_required
+def sync_data():
+    # Simulate a sync action; in production, call the actual HRIS/Payroll API.
+    flash("Data synchronization with HRIS/Payroll completed successfully.", "success")
+    return redirect(url_for('hr.integrations'))

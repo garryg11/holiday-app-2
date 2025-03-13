@@ -4,6 +4,14 @@
   <h2 class="mb-4">Employee Dashboard</h2>
   <p>Welcome, {{ current_user.email }}! Below is an overview of your time-off balance and request options.</p>
   
+  <!-- Display Prorated Leave Entitlement (Aliquot Calculation) -->
+  <div class="mb-4">
+    <p>
+      <strong>Leave Entitlement:</strong> {{ current_user.time_off_balance | round(1) }} days 
+      ({{ current_user.time_off_balance_hours | round(0) }} hours)
+    </p>
+  </div>
+  
   <div class="row">
     <!-- Time-Off Balance Card -->
     <div class="col-md-6">
@@ -19,7 +27,7 @@
             <div 
               class="progress-bar bg-success" 
               role="progressbar" 
-              style="width: {{ used_percentage }}%" 
+              style="width: {{ used_percentage }}%;" 
               aria-valuenow="{{ used_percentage }}" 
               aria-valuemin="0" 
               aria-valuemax="100"

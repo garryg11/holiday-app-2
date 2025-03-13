@@ -2,95 +2,78 @@
 {% block content %}
 <div class="container">
   <h2>Register New User (HR)</h2>
-  <form method="POST" action="{{ url_for('hr.register') }}" novalidate>
-    <!-- Personal Information Section -->
-    <fieldset class="mb-4">
-      <legend>Personal Information</legend>
-      <div class="mb-3">
-        <label for="employee_id" class="form-label">Employee ID Number <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="employee_id" name="employee_id" placeholder="Enter employee ID number" required aria-required="true">
-      </div>
-      <div class="mb-3">
-        <label for="name" class="form-label">Full Name <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="name" name="name" placeholder="Enter full name" required aria-required="true">
-      </div>
-      <div class="mb-3">
-        <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-        <input type="email" class="form-control" id="email" name="email" placeholder="Enter email address" required aria-required="true">
-      </div>
-      <div class="mb-3">
-        <label for="cost_center" class="form-label">Cost Center</label>
-        <input type="text" class="form-control" id="cost_center" name="cost_center" placeholder="Enter cost center (if applicable)">
-      </div>
-      <div class="mb-3">
-        <label for="department" class="form-label">Department</label>
-        <input type="text" class="form-control" id="department" name="department" placeholder="Enter department">
-      </div>
-    </fieldset>
-
-    <!-- Account Details Section -->
-    <fieldset class="mb-4">
-      <legend>Account Details</legend>
-      <!-- Role Selection -->
-      <div class="mb-3">
-        <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
-        <select class="form-select" id="role" name="role" required aria-required="true">
-          <option value="" selected disabled>Select role</option>
-          <option value="employee">Employee</option>
-          <option value="supervisor">Supervisor</option>
-          <option value="manager">Manager</option>
-          <option value="admin">Admin</option>
-          <option value="sub-admin">Sub-Admin</option>
-          <option value="hr">HR</option>
-        </select>
-      </div>
-      <!-- Time-Off Balance (Days) -->
-      <div class="mb-3">
-        <label for="time_off_balance" class="form-label">Time-Off Balance (days) <span class="text-danger">*</span></label>
-        <input type="number" step="0.1" class="form-control" id="time_off_balance" name="time_off_balance" placeholder="Enter allocated leave days" value="20.0" required aria-required="true" min="0">
-        <div class="form-text">Enter the number of leave days allocated (default is 20 days).</div>
-      </div>
-      <!-- Time-Off Balance (Hours) -->
-      <div class="mb-3">
-        <label for="time_off_balance_hours" class="form-label">Time-Off Balance (hours) <span class="text-danger">*</span></label>
-        <input type="number" step="1" class="form-control" id="time_off_balance_hours" name="time_off_balance_hours" placeholder="Calculated automatically" value="160" required aria-required="true" min="0" readonly>
-        <div class="form-text">Automatically calculated as (days * 8).</div>
-      </div>
-    </fieldset>
-    <div class="d-flex justify-content-between">
-      <button type="submit" class="btn btn-primary">Register</button>
-      <a href="{{ url_for('hr.dashboard') }}" class="btn btn-danger">Cancel</a>
+  <form method="POST" action="{{ url_for('hr.register') }}">
+    <!-- Personal Information -->
+    <div class="mb-3">
+      <label for="employee_id" class="form-label">Employee ID Number</label>
+      <input type="text" class="form-control" id="employee_id" name="employee_id">
     </div>
+    <div class="mb-3">
+      <label for="name" class="form-label">Full Name</label>
+      <input type="text" class="form-control" id="name" name="name" required>
+    </div>
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input type="email" class="form-control" id="email" name="email" required>
+    </div>
+    <div class="mb-3">
+      <label for="cost_center" class="form-label">Cost Center</label>
+      <input type="text" class="form-control" id="cost_center" name="cost_center">
+    </div>
+    <div class="mb-3">
+      <label for="department" class="form-label">Department</label>
+      <input type="text" class="form-control" id="department" name="department">
+    </div>
+    
+    <!-- Account Details -->
+    <div class="mb-3">
+      <label for="role" class="form-label">Role</label>
+      <select class="form-select" id="role" name="role" required>
+        <option value="employee">Employee</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="manager">Manager</option>
+        <!-- If your application allows these, but remember we restrict HR from creating them -->
+        <option value="sub-admin">Sub-Admin</option>
+        <option value="admin">Admin</option>
+        <option value="hr">HR</option>
+      </select>
+    </div>
+    
+    <!-- Time-Off Fields -->
+    <div class="mb-3">
+      <label for="time_off_balance" class="form-label">Time-Off Balance (days)</label>
+      <input type="number" step="0.1" class="form-control" id="time_off_balance" name="time_off_balance" value="20.0" required>
+      <div class="form-text">Enter the number of leave days allocated (default is 20 days).</div>
+    </div>
+    <div class="mb-3">
+      <label for="time_off_balance_hours" class="form-label">Time-Off Balance (hours)</label>
+      <input type="number" step="1" class="form-control" id="time_off_balance_hours" name="time_off_balance_hours" value="160" readonly>
+      <div class="form-text">Automatically calculated as (days * 8).</div>
+    </div>
+    
+    <!-- NEW: Start Date (For Aliquot Calculation) -->
+    <div class="mb-3">
+      <label for="start_date" class="form-label">Start Date (YYYY-MM-DD)</label>
+      <input type="date" class="form-control" id="start_date" name="start_date">
+      <div class="form-text">If provided, leave will be prorated based on remaining days in the year.</div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <button type="submit" class="btn btn-primary">Register</button>
+    <a href="{{ url_for('hr.dashboard') }}" class="btn btn-danger">Cancel</a>
   </form>
 </div>
 
-<!-- JavaScript for client-side validation and auto-calculation -->
 <script>
-(function () {
-  'use strict';
-  window.addEventListener('load', function () {
-    var form = document.getElementsByTagName('form')[0];
-    form.addEventListener('submit', function (event) {
-      if (form.checkValidity() === false) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      form.classList.add('was-validated');
-    }, false);
-
-    // Auto-calculate Time-Off Balance (hours) based on Time-Off Balance (days)
-    var daysInput = document.getElementById('time_off_balance');
-    var hoursInput = document.getElementById('time_off_balance_hours');
-
-    function updateHours() {
-      var days = parseFloat(daysInput.value);
-      if (!isNaN(days)) {
-        hoursInput.value = Math.round(days * 8);
-      }
-    }
-
-    daysInput.addEventListener('input', updateHours);
-  }, false);
-})();
+  // Optional: Automatically update "Time-Off Balance (hours)" as user types days.
+  const daysInput = document.getElementById('time_off_balance');
+  const hoursInput = document.getElementById('time_off_balance_hours');
+  
+  if (daysInput && hoursInput) {
+    daysInput.addEventListener('input', () => {
+      const days = parseFloat(daysInput.value) || 0;
+      hoursInput.value = (days * 8).toFixed(0);
+    });
+  }
 </script>
 {% endblock %}
