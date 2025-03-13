@@ -34,10 +34,23 @@ def calendar():
 @main_bp.route('/holiday_requests')
 @login_required
 def holiday_requests():
+    """
+    Displays a list of holiday requests for the current user if they're an employee,
+    otherwise shows all holiday requests. Sorted so that newest entries appear first.
+    """
     if current_user.role == 'employee':
-        requests_list = HolidayRequest.query.filter_by(user_id=current_user.id).all()
+        requests_list = (
+            HolidayRequest.query
+            .filter_by(user_id=current_user.id)
+            .order_by(HolidayRequest.id.desc())
+            .all()
+        )
     else:
-        requests_list = HolidayRequest.query.all()
+        requests_list = (
+            HolidayRequest.query
+            .order_by(HolidayRequest.id.desc())
+            .all()
+        )
     return render_template('holiday_requests.html', requests=requests_list)
 
 @main_bp.route('/holiday_request/new', methods=['GET', 'POST'])
@@ -207,7 +220,6 @@ def api_calendar_events():
             "color": color
         })
     return jsonify(events=events)
-# ---------------------------------------------------------------------- #
 
 @main_bp.route('/currently_on_leave')
 @login_required
@@ -330,12 +342,10 @@ def management_dashboard():
         flash("Access denied: Management Dashboard is restricted.", "danger")
         return redirect(url_for('main.calendar'))
     
-    # -- 1. Parse Optional Date Range from Query Parameters --
-    # e.g. ?start_date=2025-01-01&end_date=2025-03-31
+    # -- 1. Parse Optional Date Range from Query Parameters --    
     start_date_str = request.args.get('start_date', '')
     end_date_str = request.args.get('end_date', '')
     
-    # If no date range is provided, default to the entire current year.
     current_year = datetime.now().year
     default_start = date(current_year, 1, 1)
     default_end = date(current_year, 12, 31)
@@ -352,11 +362,9 @@ def management_dashboard():
             end_date = default_end
         
         if end_date < start_date:
-            # If user enters invalid range
             flash("Invalid date range: end date cannot be before start date.", "danger")
             return redirect(url_for('main.management_dashboard'))
     except ValueError:
-        # If parsing fails
         flash("Invalid date format. Please use YYYY-MM-DD.", "danger")
         return redirect(url_for('main.management_dashboard'))
     
@@ -367,11 +375,8 @@ def management_dashboard():
     pending_requests = HolidayRequest.query.filter_by(status='pending').count()
     
     # -- 3. Departmental Analysis (Filtered by Date Range) --
-    # We'll consider only 'approved' requests that overlap the selected date range
     dept_stats = {}
     approved_query = HolidayRequest.query.filter_by(status='approved')
-    
-    # Filter by chosen date range
     approved_query = approved_query.filter(
         HolidayRequest.start_date <= end_date,
         HolidayRequest.end_date >= start_date
@@ -383,51 +388,38 @@ def management_dashboard():
         dept_stats[dept] = dept_stats.get(dept, 0) + 1
     
     # -- 4. Trend Analysis & Forecasting (Filtered by Date Range) --
-    # We'll build monthly counts only within the user-selected range
-    from_date = start_date.replace(day=1)  # earliest possible month start
-    to_date = end_date.replace(day=1)      # used for monthly iteration
-    
-    # If the user range spans multiple years, handle accordingly
-    # For simplicity, assume same year or do multi-year logic
-    # We'll do single-year approach for demonstration
-    year_for_trend = from_date.year
-    
-    # Build a dictionary for each month in the selected year
-    # If the user-specified range crosses a year boundary, you might extend this logic
+    from_date = start_date.replace(day=1)
+    to_date = end_date.replace(day=1)
     import calendar
     trend_data = {m: 0 for m in range(1, 13)}
     
-    # Filter all requests overlapping the chosen range
     monthly_query = HolidayRequest.query.filter(
         HolidayRequest.start_date <= end_date,
         HolidayRequest.end_date >= start_date
     ).all()
     
-    # For each request, if it starts in the chosen year and overlaps range, increment
     for req in monthly_query:
-        # Only increment if the start_date is in the same year as from_date
-        # or you can expand logic to handle multiple years if needed
-        if req.start_date.year == year_for_trend:
+        if req.start_date.year == from_date.year:
             month = req.start_date.month
-            # Check if it falls within the selected range
             if req.start_date <= end_date and req.end_date >= start_date:
                 trend_data[month] += 1
     
-    # Prepare data for the chart
     month_names = [calendar.month_abbr[m] for m in range(1, 13)]
     monthly_counts = [trend_data[m] for m in range(1, 13)]
     
-    return render_template('management_dashboard.html',
-                           total_employees=total_employees,
-                           total_requests=total_requests,
-                           approved_requests=approved_requests,
-                           pending_requests=pending_requests,
-                           dept_stats=dept_stats,
-                           month_names=month_names,
-                           monthly_counts=monthly_counts,
-                           current_year=year_for_trend,
-                           start_date_str=start_date_str,
-                           end_date_str=end_date_str)
+    return render_template(
+        'management_dashboard.html',
+        total_employees=total_employees,
+        total_requests=total_requests,
+        approved_requests=approved_requests,
+        pending_requests=pending_requests,
+        dept_stats=dept_stats,
+        month_names=month_names,
+        monthly_counts=monthly_counts,
+        current_year=from_date.year,
+        start_date_str=start_date_str,
+        end_date_str=end_date_str
+    )
 
 # ------------------- NEW ENDPOINT FOR REVERSED CALENDAR EVENTS ------------------- #
 @main_bp.route('/api/reversed_calendar_events')
@@ -440,7 +432,6 @@ def api_reversed_calendar_events():
     events_data = []
     approved_requests = HolidayRequest.query.filter_by(status='approved').all()
     
-    # Build a list of event dictionaries
     for req in approved_requests:
         events_data.append({
             "title": f"{req.user.email} - {req.request_type}",
@@ -448,13 +439,11 @@ def api_reversed_calendar_events():
             "end": (req.end_date + timedelta(days=1)).isoformat()
         })
     
-    # Sort the events by start date descending (newest first)
+    # Sort the events by start date descending
     events_data.sort(key=lambda e: e["start"], reverse=True)
     
     return jsonify(events=events_data)
-# ---------------------------------------------------------------------- #
 
-# ------------------- NEW ROUTE FOR REVERSED LIST PAGE ------------------- #
 @main_bp.route('/reversed_list')
 @login_required
 def reversed_list_page():
@@ -462,4 +451,3 @@ def reversed_list_page():
     Renders a page displaying approved holiday requests in descending order (newest first).
     """
     return render_template('reversed_list.html')
-# ---------------------------------------------------------------------- #

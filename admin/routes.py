@@ -18,7 +18,7 @@ def admin_required(func):
     return wrapper
 
 # ---------------- Admin Dashboard ----------------
-@admin_bp.route('/dashboard')
+@admin_bp.route('/dashboard', methods=['GET'])
 @login_required
 @admin_required
 def dashboard():
@@ -27,20 +27,101 @@ def dashboard():
     pending_requests = HolidayRequest.query.filter_by(status='pending').count()
     approved_requests = HolidayRequest.query.filter_by(status='approved').count()
     audit_logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).limit(5).all()
-    return render_template('admin_dashboard.html',
-                           total_users=total_users,
-                           total_requests=total_requests,
-                           pending_requests=pending_requests,
-                           approved_requests=approved_requests,
-                           audit_logs=audit_logs)
+    
+    # Process search/filter for the user management section on the dashboard
+    search_term = request.args.get('search', '').strip()
+    role_filter = request.args.get('role', '').strip()
+    query = User.query
+    if search_term:
+        like_pattern = f"%{search_term}%"
+        query = query.filter((User.email.ilike(like_pattern)) | (User.name.ilike(like_pattern)))
+    if role_filter:
+        query = query.filter_by(role=role_filter)
+    users_list = query.order_by(User.id.desc()).all()
+    
+    return render_template(
+        'admin_dashboard.html',
+        total_users=total_users,
+        total_requests=total_requests,
+        pending_requests=pending_requests,
+        approved_requests=approved_requests,
+        audit_logs=audit_logs,
+        users=users_list
+    )
 
 # ---------------- User Management ----------------
-@admin_bp.route('/users')
+@admin_bp.route('/users', methods=['GET'])
 @login_required
 @admin_required
 def users():
-    users_list = User.query.all()
+    """
+    Displays a list of users with optional search and role filtering.
+    Renders 'admin_users.html', which includes:
+      - A search bar (by email or name)
+      - A role dropdown filter
+      - A table of users with checkboxes for bulk actions
+      - 'Add New User' button
+      - Individual Edit/Delete buttons
+    """
+    search_term = request.args.get('search', '').strip()
+    role_filter = request.args.get('role', '').strip()
+    
+    query = User.query
+    if search_term:
+        like_pattern = f"%{search_term}%"
+        query = query.filter((User.email.ilike(like_pattern)) | (User.name.ilike(like_pattern)))
+    if role_filter:
+        query = query.filter_by(role=role_filter)
+        
+    users_list = query.order_by(User.id.desc()).all()
     return render_template('admin_users.html', users=users_list)
+
+@admin_bp.route('/users/bulk_action', methods=['POST'])
+@login_required
+@admin_required
+def bulk_user_action():
+    """
+    Applies a bulk action (activate, deactivate, delete) to selected users.
+    Expects:
+      - 'action' field in the POST data
+      - 'user_ids' checkboxes in the POST data
+    """
+    action = request.form.get('action')
+    user_ids = request.form.getlist('user_ids')
+    
+    if not user_ids:
+        flash("No users selected.", "warning")
+        return redirect(url_for('admin.users'))
+    
+    selected_users = User.query.filter(User.id.in_(user_ids)).all()
+    
+    if action == 'activate':
+        for user in selected_users:
+            user.active = True
+    elif action == 'deactivate':
+        for user in selected_users:
+            user.active = False
+    elif action == 'delete':
+        for user in selected_users:
+            db.session.delete(user)
+    else:
+        flash("Invalid action selected.", "danger")
+        return redirect(url_for('admin.users'))
+    
+    db.session.commit()
+    flash(f"Bulk action '{action}' applied to {len(selected_users)} user(s).", "success")
+    
+    # Log the bulk action in AuditLog
+    audit = AuditLog(
+        action=f"Bulk user action: {action}",
+        user_email=current_user.email,
+        details=f"Applied {action} to user_ids={user_ids}",
+        timestamp=datetime.utcnow()
+    )
+    db.session.add(audit)
+    db.session.commit()
+    
+    return redirect(url_for('admin.users'))
 
 @admin_bp.route('/users/new', methods=['GET', 'POST'])
 @login_required
@@ -75,7 +156,12 @@ def new_user():
         audit = AuditLog(
             action="Create User",
             user_email=current_user.email,
-            details=f"Created user: {email} (Name: {name}, Role: {role}, Cost Center: {cost_center}, Department: {department})"
+            details=(
+                f"Created user: {email} "
+                f"(Name: {name}, Role: {role}, "
+                f"Cost Center: {cost_center}, Department: {department})"
+            ),
+            timestamp=datetime.utcnow()
         )
         db.session.add(audit)
         db.session.commit()
@@ -108,7 +194,11 @@ def edit_user(user_id):
         audit = AuditLog(
             action="Edit User",
             user_email=current_user.email,
-            details=f"Edited user from (Email: {old_email}, Role: {old_role}) to (Email: {user_obj.email}, Role: {user_obj.role})"
+            details=(
+                f"Edited user from (Email: {old_email}, Role: {old_role}) "
+                f"to (Email: {user_obj.email}, Role: {user_obj.role})"
+            ),
+            timestamp=datetime.utcnow()
         )
         db.session.add(audit)
         db.session.commit()
@@ -129,7 +219,8 @@ def delete_user(user_id):
     audit = AuditLog(
         action="Delete User",
         user_email=current_user.email,
-        details=f"Deleted user: {user_obj.email}"
+        details=f"Deleted user: {user_obj.email}",
+        timestamp=datetime.utcnow()
     )
     db.session.add(audit)
     db.session.commit()
@@ -180,7 +271,8 @@ def new_holiday():
         audit = AuditLog(
             action="Create Holiday",
             user_email=current_user.email,
-            details=f"Created holiday: {name} on {holiday_date_str}"
+            details=f"Created holiday: {name} on {holiday_date_str}",
+            timestamp=datetime.utcnow()
         )
         db.session.add(audit)
         db.session.commit()
@@ -211,7 +303,11 @@ def edit_holiday(holiday_id):
         audit = AuditLog(
             action="Edit Holiday",
             user_email=current_user.email,
-            details=f"Changed holiday from (Name: {old_name}, Date: {old_date}) to (Name: {holiday.name}, Date: {holiday.holiday_date})"
+            details=(
+                f"Changed holiday from (Name: {old_name}, Date: {old_date}) "
+                f"to (Name: {holiday.name}, Date: {holiday.holiday_date})"
+            ),
+            timestamp=datetime.utcnow()
         )
         db.session.add(audit)
         db.session.commit()
@@ -232,7 +328,8 @@ def delete_holiday(holiday_id):
     audit = AuditLog(
         action="Delete Holiday",
         user_email=current_user.email,
-        details=f"Deleted holiday: {holiday.name} on {holiday.holiday_date}"
+        details=f"Deleted holiday: {holiday.name} on {holiday.holiday_date}",
+        timestamp=datetime.utcnow()
     )
     db.session.add(audit)
     db.session.commit()
