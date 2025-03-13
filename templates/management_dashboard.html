@@ -3,6 +3,23 @@
 <div class="container py-4">
   <h2 class="mb-4">Management Dashboard</h2>
   
+  <!-- Date Range Filtering Form -->
+  <form method="GET" action="{{ url_for('main.management_dashboard') }}" class="row g-3 mb-4">
+    <div class="col-auto">
+      <label for="start_date" class="col-form-label fw-bold">Start Date:</label>
+      <input type="date" class="form-control" id="start_date" name="start_date"
+             value="{{ start_date_str if start_date_str else '' }}">
+    </div>
+    <div class="col-auto">
+      <label for="end_date" class="col-form-label fw-bold">End Date:</label>
+      <input type="date" class="form-control" id="end_date" name="end_date"
+             value="{{ end_date_str if end_date_str else '' }}">
+    </div>
+    <div class="col-auto d-flex align-items-end">
+      <button type="submit" class="btn btn-outline-primary">Filter</button>
+    </div>
+  </form>
+  
   <!-- Overview & KPIs Section -->
   <div class="row mb-4">
     <div class="col-md-3">
@@ -55,7 +72,7 @@
     </div>
   </div>
   
-  <!-- Interactive Reports -->
+  <!-- Interactive Reports Section -->
   <div class="text-center mb-4">
     <a href="{{ url_for('main.export_reports') }}" class="btn btn-outline-primary">Export Reports</a>
   </div>
@@ -65,7 +82,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-  // Departmental Analysis: prepare data for a pie chart
+  // Departmental Analysis: Prepare data for a pie chart
   var deptLabels = [];
   var deptData = [];
   {% for dept, count in dept_stats.items() %}
@@ -95,7 +112,7 @@
       }
   });
   
-  // Trend Analysis: prepare data for a line chart
+  // Trend Analysis: Prepare data for a line chart
   var monthNames = {{ month_names|tojson }};
   var monthlyCounts = {{ monthly_counts|tojson }};
   

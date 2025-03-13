@@ -323,38 +323,97 @@ def manager_dashboard():
 @login_required
 def management_dashboard():
     """
-    A specialized dashboard for management (role 'management') 
-    with high-level insights.
+    Management Dashboard with date-range filtering for departmental analysis
+    and monthly trend data. Only accessible by users with role 'admin' or 'management'.
     """
     if current_user.role not in ['admin', 'management']:
         flash("Access denied: Management Dashboard is restricted.", "danger")
         return redirect(url_for('main.calendar'))
     
-    # Overview & KPIs
+    # -- 1. Parse Optional Date Range from Query Parameters --
+    # e.g. ?start_date=2025-01-01&end_date=2025-03-31
+    start_date_str = request.args.get('start_date', '')
+    end_date_str = request.args.get('end_date', '')
+    
+    # If no date range is provided, default to the entire current year.
+    current_year = datetime.now().year
+    default_start = date(current_year, 1, 1)
+    default_end = date(current_year, 12, 31)
+    
+    try:
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        else:
+            start_date = default_start
+        
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        else:
+            end_date = default_end
+        
+        if end_date < start_date:
+            # If user enters invalid range
+            flash("Invalid date range: end date cannot be before start date.", "danger")
+            return redirect(url_for('main.management_dashboard'))
+    except ValueError:
+        # If parsing fails
+        flash("Invalid date format. Please use YYYY-MM-DD.", "danger")
+        return redirect(url_for('main.management_dashboard'))
+    
+    # -- 2. Overview & KPIs (unfiltered) --
     total_employees = User.query.count()
     total_requests = HolidayRequest.query.count()
     approved_requests = HolidayRequest.query.filter_by(status='approved').count()
     pending_requests = HolidayRequest.query.filter_by(status='pending').count()
     
-    # Departmental Analysis
+    # -- 3. Departmental Analysis (Filtered by Date Range) --
+    # We'll consider only 'approved' requests that overlap the selected date range
     dept_stats = {}
-    approved_requests_list = HolidayRequest.query.filter_by(status='approved').all()
+    approved_query = HolidayRequest.query.filter_by(status='approved')
+    
+    # Filter by chosen date range
+    approved_query = approved_query.filter(
+        HolidayRequest.start_date <= end_date,
+        HolidayRequest.end_date >= start_date
+    )
+    
+    approved_requests_list = approved_query.all()
     for req in approved_requests_list:
         dept = req.user.department if req.user.department else "Unassigned"
         dept_stats[dept] = dept_stats.get(dept, 0) + 1
-
-    # Trend Analysis for current year
-    current_year = datetime.now().year
-    trend_data = {m: 0 for m in range(1, 13)}
-    all_requests = HolidayRequest.query.filter(
-        HolidayRequest.start_date >= date(current_year, 1, 1),
-        HolidayRequest.start_date <= date(current_year, 12, 31)
-    ).all()
-    for req in all_requests:
-        month = req.start_date.month
-        trend_data[month] += 1
     
+    # -- 4. Trend Analysis & Forecasting (Filtered by Date Range) --
+    # We'll build monthly counts only within the user-selected range
+    from_date = start_date.replace(day=1)  # earliest possible month start
+    to_date = end_date.replace(day=1)      # used for monthly iteration
+    
+    # If the user range spans multiple years, handle accordingly
+    # For simplicity, assume same year or do multi-year logic
+    # We'll do single-year approach for demonstration
+    year_for_trend = from_date.year
+    
+    # Build a dictionary for each month in the selected year
+    # If the user-specified range crosses a year boundary, you might extend this logic
     import calendar
+    trend_data = {m: 0 for m in range(1, 13)}
+    
+    # Filter all requests overlapping the chosen range
+    monthly_query = HolidayRequest.query.filter(
+        HolidayRequest.start_date <= end_date,
+        HolidayRequest.end_date >= start_date
+    ).all()
+    
+    # For each request, if it starts in the chosen year and overlaps range, increment
+    for req in monthly_query:
+        # Only increment if the start_date is in the same year as from_date
+        # or you can expand logic to handle multiple years if needed
+        if req.start_date.year == year_for_trend:
+            month = req.start_date.month
+            # Check if it falls within the selected range
+            if req.start_date <= end_date and req.end_date >= start_date:
+                trend_data[month] += 1
+    
+    # Prepare data for the chart
     month_names = [calendar.month_abbr[m] for m in range(1, 13)]
     monthly_counts = [trend_data[m] for m in range(1, 13)]
     
@@ -366,7 +425,9 @@ def management_dashboard():
                            dept_stats=dept_stats,
                            month_names=month_names,
                            monthly_counts=monthly_counts,
-                           current_year=current_year)
+                           current_year=year_for_trend,
+                           start_date_str=start_date_str,
+                           end_date_str=end_date_str)
 
 # ------------------- NEW ENDPOINT FOR REVERSED CALENDAR EVENTS ------------------- #
 @main_bp.route('/api/reversed_calendar_events')
