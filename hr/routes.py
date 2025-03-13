@@ -5,6 +5,7 @@ from datetime import datetime
 from extensions import db, bcrypt, mail
 from functools import wraps
 import secrets
+from sqlalchemy import or_
 
 hr_bp = Blueprint('hr', __name__, url_prefix='/hr')
 
@@ -27,14 +28,20 @@ def dashboard():
     approved_requests = HolidayRequest.query.filter_by(status='approved').count()
     pending_requests = HolidayRequest.query.filter_by(status='pending').count()
 
-    # Retrieve page number and search query from URL parameters
+    # Retrieve page number and search query from URL parameters.
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '', type=str)
     
     # Build a query for employees excluding high-privilege roles.
     employees_query = User.query.filter(~User.role.in_(['admin', 'sub-admin', 'hr']))
     if search:
-        employees_query = employees_query.filter(User.email.ilike(f"%{search}%"))
+        # Search both by email and by name (case-insensitive).
+        employees_query = employees_query.filter(
+            or_(
+                User.email.ilike(f"%{search}%"),
+                User.name.ilike(f"%{search}%")
+            )
+        )
     
     # Paginate the results (25 per page)
     employees_paginated = employees_query.order_by(User.id.asc()).paginate(page=page, per_page=25, error_out=False)

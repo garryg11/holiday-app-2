@@ -44,11 +44,13 @@
     <a href="{{ url_for('hr.register') }}" class="btn btn-primary">Register New User</a>
   </div>
   
-  <!-- Search and Filter Form -->
+  <!-- Search and Filter Form with Clear Search Button -->
   <form method="GET" action="{{ url_for('hr.dashboard') }}" class="mb-4">
     <div class="input-group">
-      <input type="text" class="form-control" name="search" placeholder="Search by email" value="{{ request.args.get('search', '') }}">
+      <input type="text" class="form-control" name="search" placeholder="Search by name or email" value="{{ request.args.get('search', '') }}">
       <button class="btn btn-outline-secondary" type="submit">Search</button>
+      <!-- Clear Search button resets the query parameters -->
+      <a href="{{ url_for('hr.dashboard') }}" class="btn btn-outline-secondary">Clear Search</a>
     </div>
   </form>
   
