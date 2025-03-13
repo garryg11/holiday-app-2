@@ -32,6 +32,10 @@
       </form>
       
       <div class="text-center mt-3">
+        <a href="{{ url_for('auth.reset_password') }}">Forgot Password?</a>
+      </div>
+      
+      <div class="text-center mt-3">
         <small>Don't have an account? 
           <a href="{{ url_for('hr.register') }}">Register here</a>.
         </small>

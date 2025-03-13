@@ -1,6 +1,8 @@
 from extensions import db, bcrypt
 from flask_login import UserMixin
 from datetime import datetime
+from itsdangerous import URLSafeTimedSerializer
+from flask import current_app
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -34,6 +36,21 @@ class User(UserMixin, db.Model):
     @property
     def remaining_time_off(self):
         return self.time_off_balance - self.used_time_off
+    
+    def get_reset_token(self, expires_sec=1800):
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        token = s.dumps({'user_id': self.id}, salt='password-reset-salt')
+        return token
+    
+    @staticmethod
+    def verify_reset_token(token, max_age=1800):
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token, salt='password-reset-salt', max_age=max_age)
+            user_id = data['user_id']
+        except Exception:
+            return None
+        return User.query.get(user_id)
     
     def __repr__(self):
         return f'<User {self.email}>'
