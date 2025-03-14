@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, jsonify, current_app
 from flask_login import login_required, current_user
-from models import HolidayRequest, User
+from models import HolidayRequest, User, Approval  # Note: Approval is newly added
 from datetime import timedelta, datetime, date
 from extensions import db, mail
 from flask_mail import Message
@@ -116,40 +116,63 @@ def approval_requests():
 @main_bp.route('/approval_request/<int:request_id>/<action>')
 @login_required
 def update_request(request_id, action):
+    # Only allow supervisors, managers, or admins to approve/reject
     if current_user.role not in ['supervisor', 'manager', 'admin']:
         flash('Access denied: you do not have permission to perform this action.', 'danger')
         return redirect(url_for('main.calendar'))
+    
     holiday_request = HolidayRequest.query.get_or_404(request_id)
+    
+    # Do not allow further approvals if the request is already finalized
     if holiday_request.status != 'pending':
         flash('This request has already been processed.', 'warning')
         return redirect(url_for('main.approval_requests'))
+    
     if action not in ['approve', 'reject']:
         flash('Invalid action.', 'danger')
         return redirect(url_for('main.approval_requests'))
     
-    if action == 'approve':
-        requested_days = (holiday_request.end_date - holiday_request.start_date).days + 1
-        if holiday_request.user.time_off_balance < requested_days:
-            flash('Insufficient time off balance to approve this request.', 'danger')
-            return redirect(url_for('main.approval_requests'))
-        holiday_request.user.time_off_balance -= requested_days
+    # Prevent duplicate submissions by the same approver for this request
+    existing_approval = next((a for a in holiday_request.approvals if a.approver_id == current_user.id), None)
+    if existing_approval:
+        flash('You have already submitted your decision for this request.', 'warning')
+        return redirect(url_for('main.approval_requests'))
     
-    holiday_request.status = 'approved' if action == 'approve' else 'rejected'
+    # Create a new Approval record for this decision
+    new_approval = Approval(
+        holiday_request_id=holiday_request.id,
+        approver_id=current_user.id,
+        approval_role=current_user.role,  # e.g., 'supervisor' or 'manager'
+        status='approved' if action == 'approve' else 'rejected'
+    )
+    db.session.add(new_approval)
     db.session.commit()
     
-    subject = f"Holiday Request {action.capitalize()}d"
-    sender = current_app.config['MAIL_USERNAME']
-    recipients = [holiday_request.user.email]
-    msg_body = (
-        f"Hello,\n\n"
-        f"Your holiday request from {holiday_request.start_date} to {holiday_request.end_date} "
-        f"has been {holiday_request.status}.\n\n"
-        "Thank you,\nHoliday Approval App Team"
-    )
-    msg = Message(subject, sender=sender, recipients=recipients, body=msg_body)
-    mail.send(msg)
+    # If any approval is rejected, mark the entire request as rejected immediately
+    if any(a.status == 'rejected' for a in holiday_request.approvals):
+        holiday_request.status = 'rejected'
+        db.session.commit()
+        flash('Request rejected due to a rejection from one of the approvers.', 'danger')
+        return redirect(url_for('main.approval_requests'))
     
-    flash(f'Request {action}d successfully. An email notification has been sent.', 'success')
+    # Check if both a supervisor and a manager have approved
+    roles_approved = {a.approval_role for a in holiday_request.approvals if a.status == 'approved'}
+    if 'supervisor' in roles_approved and 'manager' in roles_approved:
+        requested_days = (holiday_request.end_date - holiday_request.start_date).days + 1
+        if holiday_request.user.time_off_balance < requested_days:
+            holiday_request.status = 'rejected'
+            db.session.commit()
+            flash('Insufficient time off balance to approve this request.', 'danger')
+            return redirect(url_for('main.approval_requests'))
+        
+        # Deduct the approved days and mark the request as approved
+        holiday_request.user.time_off_balance -= requested_days
+        holiday_request.status = 'approved'
+        db.session.commit()
+        flash('Request approved successfully.', 'success')
+        return redirect(url_for('main.approval_requests'))
+    
+    flash('Your decision has been recorded. Awaiting further approvals.', 'info')
     return redirect(url_for('main.approval_requests'))
 
 @main_bp.route('/export_reports')

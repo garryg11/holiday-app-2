@@ -65,9 +65,25 @@ class HolidayRequest(db.Model):
     comment = db.Column(db.String(200))
     
     user = db.relationship('User', backref=db.backref('holiday_requests', lazy=True))
+    # New relationship for approvals. This will hold multiple Approval records for this holiday request.
+    approvals = db.relationship('Approval', backref='holiday_request', lazy=True)
     
     def __repr__(self):
         return f'<HolidayRequest {self.id} - {self.status}>'
+
+class Approval(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    holiday_request_id = db.Column(db.Integer, db.ForeignKey('holiday_request.id'), nullable=False)
+    approver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    approval_role = db.Column(db.String(50), nullable=False)  # e.g., 'supervisor' or 'manager'
+    status = db.Column(db.String(20), nullable=False, default='pending')  # possible values: 'pending', 'approved', 'rejected'
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship to easily access the approver's user information.
+    approver = db.relationship('User', backref=db.backref('approvals', lazy=True))
+    
+    def __repr__(self):
+        return f'<Approval {self.id} for Request {self.holiday_request_id} - {self.status}>'
 
 class PublicHoliday(db.Model):
     id = db.Column(db.Integer, primary_key=True)
