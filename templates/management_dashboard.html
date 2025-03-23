@@ -1,148 +1,305 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="container py-4">
-  <h2 class="mb-4">Management Dashboard</h2>
-  
-  <!-- Date Range Filtering Form -->
+<div class="container-fluid py-4">
+
+  <!-- Page Title -->
+  <h2 class="mb-4">{{ _("Workforce Performance Management Dashboard") }}</h2>
+
+  <!-- Date Range Display -->
+  {% if start_date_str and end_date_str %}
+    <p class="mb-3">
+      {{ _("Currently showing data for:") }}
+      <strong>{{ start_date_str }} - {{ end_date_str }}</strong>
+    </p>
+  {% else %}
+    <p class="mb-3">{{ _("Currently showing all available data.") }}</p>
+  {% endif %}
+
+  <!-- Date Range Filter Form -->
   <form method="GET" action="{{ url_for('main.management_dashboard') }}" class="row g-3 mb-4">
     <div class="col-auto">
-      <label for="start_date" class="col-form-label fw-bold">Start Date:</label>
-      <input type="date" class="form-control" id="start_date" name="start_date"
-             value="{{ start_date_str if start_date_str else '' }}">
+      <label for="start_date" class="col-form-label fw-bold">{{ _("Start Date:") }}</label>
+      <input 
+        type="date" 
+        class="form-control" 
+        id="start_date" 
+        name="start_date" 
+        value="{{ start_date_str if start_date_str else '' }}"
+      >
     </div>
     <div class="col-auto">
-      <label for="end_date" class="col-form-label fw-bold">End Date:</label>
-      <input type="date" class="form-control" id="end_date" name="end_date"
-             value="{{ end_date_str if end_date_str else '' }}">
+      <label for="end_date" class="col-form-label fw-bold">{{ _("End Date:") }}</label>
+      <input 
+        type="date" 
+        class="form-control" 
+        id="end_date" 
+        name="end_date" 
+        value="{{ end_date_str if end_date_str else '' }}"
+      >
     </div>
     <div class="col-auto d-flex align-items-end">
-      <button type="submit" class="btn btn-outline-primary">Filter</button>
+      <button type="submit" class="btn btn-outline-primary">{{ _("Filter") }}</button>
     </div>
   </form>
-  
-  <!-- Overview & KPIs Section -->
+
+  <!-- Top Stats Row (6 cards) -->
+  <div class="row">
+    <!-- Total Employees -->
+    <div class="col-sm-6 col-md-4 col-lg-2 mb-3">
+      <div class="card p-3 text-center">
+        <div class="fw-bold text-muted">{{ _("Total Employees") }}</div>
+        <div class="fs-4">{{ total_employees }}</div>
+      </div>
+    </div>
+    <!-- Total Requests -->
+    <div class="col-sm-6 col-md-4 col-lg-2 mb-3">
+      <div class="card p-3 text-center">
+        <div class="fw-bold text-muted">{{ _("Total Requests") }}</div>
+        <div class="fs-4">{{ total_requests }}</div>
+      </div>
+    </div>
+    <!-- Approved Requests -->
+    <div class="col-sm-6 col-md-4 col-lg-2 mb-3">
+      <div class="card p-3 text-center">
+        <div class="fw-bold text-muted">{{ _("Approved Requests") }}</div>
+        <div class="fs-4">{{ approved_requests }}</div>
+      </div>
+    </div>
+    <!-- Rejected Requests -->
+    <div class="col-sm-6 col-md-4 col-lg-2 mb-3">
+      <div class="card p-3 text-center">
+        <div class="fw-bold text-muted">{{ _("Rejected Requests") }}</div>
+        <div class="fs-4">{{ rejected_requests }}</div>
+      </div>
+    </div>
+    <!-- Pending Requests -->
+    <div class="col-sm-6 col-md-4 col-lg-2 mb-3">
+      <div class="card p-3 text-center">
+        <div class="fw-bold text-muted">{{ _("Pending Requests") }}</div>
+        <div class="fs-4">{{ pending_requests }}</div>
+      </div>
+    </div>
+    <!-- Avg. Approval Time -->
+    <div class="col-sm-6 col-md-4 col-lg-2 mb-3">
+      <div class="card p-3 text-center">
+        <div class="fw-bold text-muted">{{ _("Avg. Approval Time") }}</div>
+        <div class="fs-4">{{ avg_approval_time }} {{ _("days") }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1 -->
   <div class="row mb-4">
-    <div class="col-md-3">
-      <div class="card shadow text-center">
-        <div class="card-header">Total Employees</div>
+    <!-- Employee count by department (Bar Chart) -->
+    <div class="col-md-6 mb-3">
+      <div class="card h-100">
+        <div class="card-header fw-bold">{{ _("Employee count by department") }}</div>
         <div class="card-body">
-          <h5 class="card-title">{{ total_employees }}</h5>
+          <canvas id="employeeDeptChart"></canvas>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card shadow text-center">
-        <div class="card-header">Total Requests</div>
+
+    <!-- Department Analysis (Pie Chart) -->
+    <div class="col-md-6 mb-3">
+      <div class="card h-100">
+        <div class="card-header fw-bold">{{ _("Department Analysis") }}</div>
         <div class="card-body">
-          <h5 class="card-title">{{ total_requests }}</h5>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card shadow text-center">
-        <div class="card-header">Approved Requests</div>
-        <div class="card-body">
-          <h5 class="card-title">{{ approved_requests }}</h5>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card shadow text-center">
-        <div class="card-header">Pending Requests</div>
-        <div class="card-body">
-          <h5 class="card-title">{{ pending_requests }}</h5>
+          <canvas id="departmentAnalysisChart"></canvas>
         </div>
       </div>
     </div>
   </div>
-  
-  <!-- Departmental Analysis Section -->
-  <div class="card shadow mb-4">
-    <div class="card-header">Departmental Analysis</div>
-    <div class="card-body">
-      <canvas id="deptChart"></canvas>
+
+  <!-- Charts Row 2 -->
+  <div class="row mb-4">
+    <!-- Employee count by status (Pie Chart) -->
+    <div class="col-md-6 mb-3">
+      <div class="card h-100">
+        <div class="card-header fw-bold">{{ _("Employee count by status") }}</div>
+        <div class="card-body">
+          <canvas id="employeeStatusChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Holiday Requests (Bar Chart) -->
+    <div class="col-md-6 mb-3">
+      <div class="card h-100">
+        <div class="card-header fw-bold">
+          {{ _("Monthly Holiday Requests") }} ({{ current_year }})
+        </div>
+        <div class="card-body">
+          <canvas id="monthlyRequestsChart"></canvas>
+        </div>
+      </div>
     </div>
   </div>
-  
-  <!-- Trend Analysis & Forecasting Section -->
-  <div class="card shadow mb-4">
-    <div class="card-header">Monthly Holiday Requests ({{ current_year }})</div>
-    <div class="card-body">
-      <canvas id="trendChart"></canvas>
+
+  <!-- Employee Details Table -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header fw-bold">{{ _("Employee details") }}</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>{{ _("Name") }}</th>
+                  <th>{{ _("Email") }}</th>
+                  <th>{{ _("Department") }}</th>
+                  <th>{{ _("Destination") }}</th>
+                  <th>{{ _("Joined Date") }}</th>
+                  <th>{{ _("Experience") }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for emp in employee_details %}
+                <tr>
+                  <td>{{ emp.name }}</td>
+                  <td>{{ emp.email }}</td>
+                  <td>{{ emp.department }}</td>
+                  <td>{{ emp.destination }}</td>
+                  <td>{{ emp.joined_date }}</td>
+                  <td>{{ emp.experience }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-  
-  <!-- Interactive Reports Section -->
+
+  <!-- Export Reports Button -->
   <div class="text-center mb-4">
-    <a href="{{ url_for('main.export_reports') }}" class="btn btn-outline-primary">Export Reports</a>
+    <a href="{{ url_for('main.export_reports') }}" class="btn btn-outline-primary">
+      {{ _("Export Reports") }}
+    </a>
   </div>
-</div>
+
+</div> <!-- /container-fluid -->
 
 <!-- Include Chart.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-  // Departmental Analysis: Prepare data for a pie chart
-  var deptLabels = [];
-  var deptData = [];
-  {% for dept, count in dept_stats.items() %}
-    deptLabels.push("{{ dept }}");
-    deptData.push({{ count }});
+  // -------------------------------------------
+  // Employee count by department (Bar Chart)
+  // -------------------------------------------
+  var deptBarLabels = [];
+  var deptBarData = [];
+  {% for department, count in employee_count_by_department.items() %}
+    deptBarLabels.push("{{ department }}");
+    deptBarData.push({{ count }});
   {% endfor %}
-  
-  var ctxDept = document.getElementById('deptChart').getContext('2d');
-  var deptChart = new Chart(ctxDept, {
+
+  var ctxEmployeeDept = document.getElementById('employeeDeptChart').getContext('2d');
+  var employeeDeptChart = new Chart(ctxEmployeeDept, {
+      type: 'bar',
+      data: {
+          labels: deptBarLabels,
+          datasets: [{
+              label: '{{ _("Count") }}',
+              data: deptBarData,
+              backgroundColor: '#007bff'
+          }]
+      },
+      options: {
+          responsive: true,
+          scales: {
+              y: { beginAtZero: true }
+          },
+          plugins: {
+              legend: { display: false }
+          }
+      }
+  });
+
+  // -------------------------------------------
+  // Department Analysis (Pie Chart)
+  // -------------------------------------------
+  var deptAnalysisLabels = [];
+  var deptAnalysisData = [];
+  {% for dept_name, val in department_analysis.items() %}
+    deptAnalysisLabels.push("{{ dept_name }}");
+    deptAnalysisData.push({{ val }});
+  {% endfor %}
+
+  var ctxDepartmentAnalysis = document.getElementById('departmentAnalysisChart').getContext('2d');
+  var departmentAnalysisChart = new Chart(ctxDepartmentAnalysis, {
       type: 'pie',
       data: {
-          labels: deptLabels,
+          labels: deptAnalysisLabels,
           datasets: [{
-              data: deptData,
+              data: deptAnalysisData,
+              backgroundColor: ['#17a2b8', '#dc3545', '#ffc107', '#28a745', '#007bff']
+          }]
+      },
+      options: {
+          responsive: true,
+          plugins: {
+              legend: { position: 'bottom' }
+          }
+      }
+  });
+
+  // -------------------------------------------
+  // Employee count by status (Pie Chart)
+  // -------------------------------------------
+  var statusLabels = [];
+  var statusData = [];
+  {% for status, count in employee_count_by_status.items() %}
+    statusLabels.push("{{ status }}");
+    statusData.push({{ count }});
+  {% endfor %}
+
+  var ctxEmployeeStatus = document.getElementById('employeeStatusChart').getContext('2d');
+  var employeeStatusChart = new Chart(ctxEmployeeStatus, {
+      type: 'pie',
+      data: {
+          labels: statusLabels,
+          datasets: [{
+              data: statusData,
               backgroundColor: [
-                  '#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6f42c1', '#fd7e14'
+                '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6f42c1', '#fd7e14'
               ]
           }]
       },
       options: {
           responsive: true,
           plugins: {
-              legend: {
-                  position: 'bottom'
-              }
+              legend: { position: 'bottom' }
           }
       }
   });
-  
-  // Trend Analysis: Prepare data for a line chart
-  var monthNames = {{ month_names|tojson }};
-  var monthlyCounts = {{ monthly_counts|tojson }};
-  
-  var ctxTrend = document.getElementById('trendChart').getContext('2d');
-  var trendChart = new Chart(ctxTrend, {
-      type: 'line',
+
+  // -------------------------------------------
+  // Monthly Holiday Requests (Bar Chart)
+  // -------------------------------------------
+  var monthlyBarLabels = {{ month_names|tojson }};
+  var monthlyBarData = {{ monthly_counts|tojson }};
+
+  var ctxMonthlyRequests = document.getElementById('monthlyRequestsChart').getContext('2d');
+  var monthlyRequestsChart = new Chart(ctxMonthlyRequests, {
+      type: 'bar',
       data: {
-          labels: monthNames,
+          labels: monthlyBarLabels,
           datasets: [{
-              label: 'Holiday Requests',
-              data: monthlyCounts,
-              fill: false,
-              borderColor: '#007bff',
-              tension: 0.1
+              label: '{{ _("Holiday Requests") }}',
+              data: monthlyBarData,
+              backgroundColor: '#20c997'
           }]
       },
       options: {
           responsive: true,
           scales: {
-              y: {
-                  beginAtZero: true,
-                  ticks: {
-                      precision: 0
-                  }
-              }
+              y: { beginAtZero: true }
           },
           plugins: {
-              legend: {
-                  position: 'bottom'
-              }
+              legend: { position: 'bottom' }
           }
       }
   });

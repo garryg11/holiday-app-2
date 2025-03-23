@@ -1,42 +1,42 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container">
-  <h2 class="mb-4">Manager Dashboard</h2>
-  <p>Welcome, {{ current_user.email }}! This dashboard provides an overview of team leave requests and department metrics.</p>
+  <h2 class="mb-4">{{ _("Manager Dashboard") }}</h2>
+  <p>{{ _("Welcome,") }} {{ current_user.email }}! {{ _("This dashboard provides an overview of team leave requests and department metrics.") }}</p>
 
   <!-- Example Row of Summary Cards -->
   <div class="row">
     <div class="col-md-4">
       <div class="card text-white bg-warning mb-3">
-        <div class="card-header">Pending Requests</div>
+        <div class="card-header">{{ _("Pending Requests") }}</div>
         <div class="card-body">
           <h5 class="card-title">4</h5>
-          <p class="card-text">Team requests awaiting approval.</p>
+          <p class="card-text">{{ _("Team requests awaiting approval.") }}</p>
         </div>
       </div>
     </div>
     <div class="col-md-4">
       <div class="card text-white bg-success mb-3">
-        <div class="card-header">Approved Requests</div>
+        <div class="card-header">{{ _("Approved Requests") }}</div>
         <div class="card-body">
           <h5 class="card-title">12</h5>
-          <p class="card-text">Requests approved so far.</p>
+          <p class="card-text">{{ _("Requests approved so far.") }}</p>
         </div>
       </div>
     </div>
     <div class="col-md-4">
       <div class="card text-white bg-info mb-3">
-        <div class="card-header">Total Requests</div>
+        <div class="card-header">{{ _("Total Requests") }}</div>
         <div class="card-body">
           <h5 class="card-title">16</h5>
-          <p class="card-text">All requests in the system.</p>
+          <p class="card-text">{{ _("All requests in the system.") }}</p>
         </div>
       </div>
     </div>
   </div>
 
-  <p class="mt-3">Use the links below to manage team requests or view the calendar:</p>
-  <a href="{{ url_for('main.approval_requests') }}" class="btn btn-primary">Team Requests</a>
-  <a href="{{ url_for('main.calendar') }}" class="btn btn-secondary">Calendar</a>
+  <p class="mt-3">{{ _("Use the links below to manage team requests or view the calendar:") }}</p>
+  <a href="{{ url_for('main.approval_requests') }}" class="btn btn-primary">{{ _("Team Requests") }}</a>
+  <a href="{{ url_for('main.calendar') }}" class="btn btn-secondary">{{ _("Calendar") }}</a>
 </div>
 {% endblock %}

@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container py-4">
-  <h2 class="mb-4">Submit a New Holiday Request</h2>
-  <p>Need some time off? Fill out the form below to request your leave.</p>
+  <h2 class="mb-4">{{ _("Submit a New Holiday Request") }}</h2>
+  <p>{{ _("Need some time off? Fill out the form below to request your leave.") }}</p>
   
   <!-- Display any flashed messages (errors, success, etc.) -->
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -21,7 +21,7 @@
       <form method="POST" action="{{ url_for('main.new_holiday_request') }}" novalidate>
         <!-- Start Date -->
         <div class="mb-3">
-          <label for="start_date" class="form-label">Start Date</label>
+          <label for="start_date" class="form-label">{{ _("Start Date") }}</label>
           <input 
             type="date" 
             class="form-control" 
@@ -29,12 +29,12 @@
             name="start_date" 
             required
           >
-          <div class="form-text">Select the first day of your leave.</div>
+          <div class="form-text">{{ _("Select the first day of your leave.") }}</div>
         </div>
         
         <!-- End Date -->
         <div class="mb-3">
-          <label for="end_date" class="form-label">End Date</label>
+          <label for="end_date" class="form-label">{{ _("End Date") }}</label>
           <input 
             type="date" 
             class="form-control" 
@@ -42,43 +42,43 @@
             name="end_date" 
             required
           >
-          <div class="form-text">Select the last day of your leave.</div>
+          <div class="form-text">{{ _("Select the last day of your leave.") }}</div>
         </div>
         
         <!-- Request Type -->
         <div class="mb-3">
-          <label for="request_type" class="form-label">Request Type</label>
+          <label for="request_type" class="form-label">{{ _("Request Type") }}</label>
           <select 
             class="form-select" 
             id="request_type" 
             name="request_type" 
             required
           >
-            <option value="vacation" selected>Vacation</option>
-            <option value="time compensation">Time Compensation</option>
-            <option value="sick leave">Sick Leave</option>
-            <option value="personal leave">Personal Leave</option>
+            <option value="vacation" selected>{{ _("Vacation") }}</option>
+            <option value="time compensation">{{ _("Time Compensation") }}</option>
+            <option value="sick leave">{{ _("Sick Leave") }}</option>
+            <option value="personal leave">{{ _("Personal Leave") }}</option>
           </select>
         </div>
         
         <!-- Comments (optional) -->
         <div class="mb-3">
-          <label for="comment" class="form-label">Comments (optional)</label>
+          <label for="comment" class="form-label">{{ _("Comments (optional)") }}</label>
           <textarea 
             class="form-control" 
             id="comment" 
             name="comment" 
             rows="3" 
-            placeholder="Any specific details or reasons for the request?"
+            placeholder="{{ _('Any specific details or reasons for the request?') }}"
           ></textarea>
         </div>
         
         <!-- Action Buttons -->
         <div class="d-flex justify-content-between">
-          <button type="submit" class="btn btn-primary">Submit Request</button>
+          <button type="submit" class="btn btn-primary">{{ _("Submit Request") }}</button>
           <!-- Cancel Button: Redirects HR users to main.home and employees to employee dashboard -->
           <a href="{% if current_user.role == 'hr' %}{{ url_for('main.home') }}{% else %}{{ url_for('main.employee_dashboard') }}{% endif %}" class="btn btn-danger">
-            Cancel Request
+            {{ _("Cancel Request") }}
           </a>
         </div>
       </form>

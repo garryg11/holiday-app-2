@@ -4,6 +4,7 @@ from models import User, PublicHoliday, AuditLog, HolidayRequest
 from datetime import datetime, date
 from extensions import db
 from functools import wraps
+from flask_babel import _  # Import the translation function
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -12,7 +13,7 @@ def admin_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         if current_user.role not in ['admin', 'sub-admin']:
-            flash("Access denied: Admins only.", "danger")
+            flash(_("Access denied: Admins only."), "danger")
             return redirect(url_for('main.calendar'))
         return func(*args, **kwargs)
     return wrapper
@@ -90,7 +91,7 @@ def bulk_user_action():
     user_ids = request.form.getlist('user_ids')
     
     if not user_ids:
-        flash("No users selected.", "warning")
+        flash(_("No users selected."), "warning")
         return redirect(url_for('admin.users'))
     
     selected_users = User.query.filter(User.id.in_(user_ids)).all()
@@ -105,17 +106,17 @@ def bulk_user_action():
         for user in selected_users:
             db.session.delete(user)
     else:
-        flash("Invalid action selected.", "danger")
+        flash(_("Invalid action selected."), "danger")
         return redirect(url_for('admin.users'))
     
     db.session.commit()
-    flash(f"Bulk action '{action}' applied to {len(selected_users)} user(s).", "success")
+    flash(_("Bulk action '{action}' applied to {count} user(s).").format(action=action, count=len(selected_users)), "success")
     
     # Log the bulk action in AuditLog
     audit = AuditLog(
-        action=f"Bulk user action: {action}",
+        action=_("Bulk user action: {action}").format(action=action),
         user_email=current_user.email,
-        details=f"Applied {action} to user_ids={user_ids}",
+        details=_("Applied {action} to user_ids={ids}").format(action=action, ids=user_ids),
         timestamp=datetime.utcnow()
     )
     db.session.add(audit)
@@ -137,7 +138,7 @@ def new_user():
         time_off_balance = float(request.form.get('time_off_balance') or 20.0)
         
         if User.query.filter_by(email=email).first():
-            flash("User with that email already exists.", "danger")
+            flash(_("User with that email already exists."), "danger")
             return redirect(url_for('admin.new_user'))
         
         new_user_obj = User(
@@ -154,19 +155,17 @@ def new_user():
         
         # Audit Log Entry
         audit = AuditLog(
-            action="Create User",
+            action=_("Create User"),
             user_email=current_user.email,
-            details=(
-                f"Created user: {email} "
-                f"(Name: {name}, Role: {role}, "
-                f"Cost Center: {cost_center}, Department: {department})"
+            details=_("Created user: {email} (Name: {name}, Role: {role}, Cost Center: {cc}, Department: {dept})").format(
+                email=email, name=name, role=role, cc=cost_center, dept=department
             ),
             timestamp=datetime.utcnow()
         )
         db.session.add(audit)
         db.session.commit()
         
-        flash("New user created successfully.", "success")
+        flash(_("New user created successfully."), "success")
         return redirect(url_for('admin.users'))
     return render_template('admin_new_user.html')
 
@@ -192,18 +191,17 @@ def edit_user(user_id):
         
         # Audit Log Entry
         audit = AuditLog(
-            action="Edit User",
+            action=_("Edit User"),
             user_email=current_user.email,
-            details=(
-                f"Edited user from (Email: {old_email}, Role: {old_role}) "
-                f"to (Email: {user_obj.email}, Role: {user_obj.role})"
+            details=_("Edited user from (Email: {old_email}, Role: {old_role}) to (Email: {new_email}, Role: {new_role})").format(
+                old_email=old_email, old_role=old_role, new_email=user_obj.email, new_role=user_obj.role
             ),
             timestamp=datetime.utcnow()
         )
         db.session.add(audit)
         db.session.commit()
         
-        flash("User updated successfully.", "success")
+        flash(_("User updated successfully."), "success")
         return redirect(url_for('admin.users'))
     return render_template('admin_edit_user.html', user=user_obj)
 
@@ -217,15 +215,15 @@ def delete_user(user_id):
     
     # Audit Log Entry
     audit = AuditLog(
-        action="Delete User",
+        action=_("Delete User"),
         user_email=current_user.email,
-        details=f"Deleted user: {user_obj.email}",
+        details=_("Deleted user: {email}").format(email=user_obj.email),
         timestamp=datetime.utcnow()
     )
     db.session.add(audit)
     db.session.commit()
     
-    flash("User deleted successfully.", "success")
+    flash(_("User deleted successfully."), "success")
     return redirect(url_for('admin.users'))
 
 @admin_bp.route('/toggle_user/<int:user_id>', methods=['POST'])
@@ -235,12 +233,12 @@ def toggle_user(user_id):
     user_obj = User.query.get_or_404(user_id)
     # If current user is sub-admin, they cannot deactivate an admin.
     if current_user.role == 'sub-admin' and user_obj.role == 'admin':
-        flash("Sub-Admin cannot deactivate an Admin.", "danger")
+        flash(_("Sub-Admin cannot deactivate an Admin."), "danger")
         return redirect(url_for('admin.users'))
     user_obj.active = not user_obj.active
     db.session.commit()
-    status = "activated" if user_obj.active else "deactivated"
-    flash(f"User {user_obj.email} has been {status}.", "success")
+    status = _("activated") if user_obj.active else _("deactivated")
+    flash(_("User {email} has been {status}.").format(email=user_obj.email, status=status), "success")
     return redirect(url_for('admin.users'))
 
 # ---------------- System Configuration: Public Holidays ----------------
@@ -261,7 +259,7 @@ def new_holiday():
         try:
             holiday_date = datetime.strptime(holiday_date_str, '%Y-%m-%d').date()
         except ValueError:
-            flash("Invalid date format. Use YYYY-MM-DD.", "danger")
+            flash(_("Invalid date format. Use YYYY-MM-DD."), "danger")
             return redirect(url_for('admin.new_holiday'))
         new_hol = PublicHoliday(holiday_date=holiday_date, name=name)
         db.session.add(new_hol)
@@ -269,15 +267,15 @@ def new_holiday():
         
         # Audit Log Entry
         audit = AuditLog(
-            action="Create Holiday",
+            action=_("Create Holiday"),
             user_email=current_user.email,
-            details=f"Created holiday: {name} on {holiday_date_str}",
+            details=_("Created holiday: {name} on {date}").format(name=name, date=holiday_date_str),
             timestamp=datetime.utcnow()
         )
         db.session.add(audit)
         db.session.commit()
         
-        flash("Holiday added successfully.", "success")
+        flash(_("Holiday added successfully."), "success")
         return redirect(url_for('admin.holidays'))
     return render_template('admin_new_holiday.html')
 
@@ -294,25 +292,24 @@ def edit_holiday(holiday_id):
         try:
             holiday.holiday_date = datetime.strptime(holiday_date_str, '%Y-%m-%d').date()
         except ValueError:
-            flash("Invalid date format. Use YYYY-MM-DD.", "danger")
+            flash(_("Invalid date format. Use YYYY-MM-DD."), "danger")
             return redirect(url_for('admin.edit_holiday', holiday_id=holiday_id))
         holiday.name = name
         db.session.commit()
         
         # Audit Log Entry
         audit = AuditLog(
-            action="Edit Holiday",
+            action=_("Edit Holiday"),
             user_email=current_user.email,
-            details=(
-                f"Changed holiday from (Name: {old_name}, Date: {old_date}) "
-                f"to (Name: {holiday.name}, Date: {holiday.holiday_date})"
+            details=_("Changed holiday from (Name: {old_name}, Date: {old_date}) to (Name: {new_name}, Date: {new_date})").format(
+                old_name=old_name, old_date=old_date, new_name=holiday.name, new_date=holiday.holiday_date
             ),
             timestamp=datetime.utcnow()
         )
         db.session.add(audit)
         db.session.commit()
         
-        flash("Holiday updated successfully.", "success")
+        flash(_("Holiday updated successfully."), "success")
         return redirect(url_for('admin.holidays'))
     return render_template('admin_edit_holiday.html', holiday=holiday)
 
@@ -326,15 +323,15 @@ def delete_holiday(holiday_id):
     
     # Audit Log Entry
     audit = AuditLog(
-        action="Delete Holiday",
+        action=_("Delete Holiday"),
         user_email=current_user.email,
-        details=f"Deleted holiday: {holiday.name} on {holiday.holiday_date}",
+        details=_("Deleted holiday: {name} on {date}").format(name=holiday.name, date=holiday.holiday_date),
         timestamp=datetime.utcnow()
     )
     db.session.add(audit)
     db.session.commit()
     
-    flash("Holiday deleted successfully.", "success")
+    flash(_("Holiday deleted successfully."), "success")
     return redirect(url_for('admin.holidays'))
 
 # ---------------- Integration Management ----------------
@@ -360,6 +357,6 @@ def security():
 def notifications():
     if request.method == 'POST':
         # Simulate saving notification settings
-        flash("Notification settings updated successfully.", "success")
+        flash(_("Notification settings updated successfully."), "success")
         return redirect(url_for('admin.notifications'))
     return render_template('admin_notifications.html')

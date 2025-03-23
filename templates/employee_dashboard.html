@@ -1,103 +1,76 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container py-4">
-  <h2 class="mb-4">Employee Dashboard</h2>
-  <p>Welcome, {{ current_user.email }}! Below is an overview of your time-off balance and request options.</p>
+  <h2 class="mb-4">{{ _("Admin Dashboard") }}</h2>
   
-  <!-- Display Prorated Leave Entitlement (Aliquot Calculation) -->
-  <div class="mb-4">
-    <p>
-      <strong>Leave Entitlement:</strong> {{ current_user.time_off_balance | round(1) }} days 
-      ({{ current_user.time_off_balance_hours | round(0) }} hours)
-    </p>
-  </div>
-  
+  <!-- Metrics Section -->
   <div class="row">
-    <!-- Time-Off Balance Card -->
-    <div class="col-md-6">
-      <div class="card shadow mb-4">
-        <div class="card-header">Time-Off Balance</div>
+    <div class="col-md-3">
+      <div class="card text-white bg-primary mb-3">
+        <div class="card-header">{{ _("Total Users") }}</div>
         <div class="card-body">
-          {% set used_time_off_hours = current_user.used_time_off * 8 %}
-          {% set total_time_off_hours = current_user.time_off_balance_hours %}
-          {% set used_percentage = (used_time_off_hours / total_time_off_hours) * 100 if total_time_off_hours > 0 else 0 %}
-          
-          <label class="form-label fw-bold">Used / Total</label>
-          <div class="progress mb-3" style="height: 25px;">
-            <div 
-              class="progress-bar bg-success" 
-              role="progressbar" 
-              style="width: {{ used_percentage }}%;" 
-              aria-valuenow="{{ used_percentage }}" 
-              aria-valuemin="0" 
-              aria-valuemax="100"
-            >
-              {{ used_time_off_hours }} / {{ total_time_off_hours }} hrs
-            </div>
-          </div>
-          
-          <p class="card-text">
-            Remaining: 
-            <strong>{{ total_time_off_hours - used_time_off_hours }} hours</strong> 
-            ({{ current_user.remaining_time_off }} days)
-          </p>
+          <h5 class="card-title">{{ total_users }}</h5>
         </div>
       </div>
     </div>
-    
-    <!-- New Request Card -->
-    <div class="col-md-6">
-      <div class="card shadow mb-4">
-        <div class="card-header">Submit a Request</div>
-        <div class="card-body text-center">
-          <p class="card-text">Request vacation or time compensation.</p>
-          <a href="{{ url_for('main.new_holiday_request') }}" class="btn btn-primary">New Request</a>
+    <div class="col-md-3">
+      <div class="card text-white bg-warning mb-3">
+        <div class="card-header">{{ _("Total Requests") }}</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ total_requests }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-danger mb-3">
+        <div class="card-header">{{ _("Pending Requests") }}</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ pending_requests }}</h5>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-success mb-3">
+        <div class="card-header">{{ _("Approved Requests") }}</div>
+        <div class="card-body">
+          <h5 class="card-title">{{ approved_requests }}</h5>
         </div>
       </div>
     </div>
   </div>
   
-  <!-- Recent Requests Section -->
-  {% if recent_requests %}
-    <h4 class="mt-4">Recent Requests</h4>
-    <table class="table table-hover">
+  <!-- Audit Logs Section -->
+  <h3>{{ _("Recent Audit Logs") }}</h3>
+  {% if audit_logs %}
+    <table class="table table-bordered">
       <thead>
         <tr>
-          <th>Type</th>
-          <th>Dates</th>
-          <th>Status</th>
+          <th>{{ _("ID") }}</th>
+          <th>{{ _("Action") }}</th>
+          <th>{{ _("User Email") }}</th>
+          <th>{{ _("Timestamp") }}</th>
+          <th>{{ _("Details") }}</th>
         </tr>
       </thead>
       <tbody>
-        {% for req in recent_requests %}
+        {% for log in audit_logs %}
         <tr>
-          <td>{{ req.request_type }}</td>
-          <td>{{ req.start_date }} - {{ req.end_date }}</td>
-          <td>
-            {% if req.status == 'approved' %}
-              <span class="badge bg-success">Approved</span>
-            {% elif req.status == 'pending' %}
-              <span class="badge bg-warning text-dark">Pending</span>
-            {% else %}
-              <span class="badge bg-danger">Rejected</span>
-            {% endif %}
-          </td>
+          <td>{{ log.id }}</td>
+          <td>{{ _(log.action) }}</td>
+          <td>{{ log.user_email }}</td>
+          <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          <td>{{ log.details }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    
-    <!-- View All Requests Button -->
-    <div class="text-end">
-      <a href="{{ url_for('main.holiday_requests') }}" class="btn btn-secondary">View All Requests</a>
-    </div>
   {% else %}
-    <p class="mt-4">You have no recent requests.</p>
+    <p>{{ _("No audit logs available.") }}</p>
   {% endif %}
   
-  <!-- Tip or Policy Reminder -->
-  <div class="alert alert-info mt-4">
-    Tip: Requests must be submitted at least 1 week in advance.
-  </div>
+  <!-- User Management Section -->
+  <h3 class="mt-4">{{ _("User Management") }}</h3>
+  <p>{{ _("Use the link below to view and manage users.") }}</p>
+  <a href="{{ url_for('admin.users') }}" class="btn btn-primary">{{ _("Manage Users") }}</a>
 </div>
 {% endblock %}

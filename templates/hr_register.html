@@ -1,62 +1,62 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container py-4">
-  <h2>Register New User (HR)</h2>
+  <h2 class="mb-4">{{ _("Register New User (HR)") }}</h2>
   <form method="POST" action="{{ url_for('hr.register') }}">
     
     <!-- Optional Employee ID Number -->
     <div class="mb-3">
-      <label for="employee_id" class="form-label">Employee ID Number (optional)</label>
+      <label for="employee_id" class="form-label">{{ _("Employee ID Number (optional)") }}</label>
       <input type="text" class="form-control" id="employee_id" name="employee_id">
     </div>
     
     <!-- Full Name -->
     <div class="mb-3">
-      <label for="name" class="form-label">Full Name</label>
+      <label for="name" class="form-label">{{ _("Full Name") }}</label>
       <input type="text" class="form-control" id="name" name="name" required>
     </div>
     
     <!-- Email -->
     <div class="mb-3">
-      <label for="email" class="form-label">Email</label>
+      <label for="email" class="form-label">{{ _("Email") }}</label>
       <input type="email" class="form-control" id="email" name="email" required>
     </div>
     
     <!-- Cost Center -->
     <div class="mb-3">
-      <label for="cost_center" class="form-label">Cost Center (optional)</label>
+      <label for="cost_center" class="form-label">{{ _("Cost Center (optional)") }}</label>
       <input type="text" class="form-control" id="cost_center" name="cost_center">
     </div>
     
     <!-- Department -->
     <div class="mb-3">
-      <label for="department" class="form-label">Department (optional)</label>
+      <label for="department" class="form-label">{{ _("Department (optional)") }}</label>
       <input type="text" class="form-control" id="department" name="department">
     </div>
     
     <!-- Start Date for Prorated (Aliquot) Calculation -->
     <div class="mb-3">
-      <label for="start_date" class="form-label">Start Date (optional)</label>
+      <label for="start_date" class="form-label">{{ _("Start Date (optional)") }}</label>
       <input type="date" class="form-control" id="start_date" name="start_date">
       <small class="text-muted">
-        If provided, leave entitlement will be prorated based on remaining days of the year.
+        {{ _("If provided, leave entitlement will be prorated based on remaining days of the year.") }}
       </small>
     </div>
     
     <!-- Role -->
     <div class="mb-3">
-      <label for="role" class="form-label">Role</label>
+      <label for="role" class="form-label">{{ _("Role") }}</label>
       <select class="form-select" id="role" name="role" required>
-        <option value="employee">Employee</option>
-        <option value="supervisor">Supervisor</option>
-        <option value="manager">Manager</option>
-        <option value="management">Management</option>
+        <option value="employee">{{ _("Employee") }}</option>
+        <option value="supervisor">{{ _("Supervisor") }}</option>
+        <option value="manager">{{ _("Manager") }}</option>
+        <option value="management">{{ _("Management") }}</option>
       </select>
     </div>
     
     <!-- Time-Off Balance (days) -->
     <div class="mb-3">
-      <label for="time_off_balance" class="form-label">Time-Off Balance (days)</label>
+      <label for="time_off_balance" class="form-label">{{ _("Time-Off Balance (days)") }}</label>
       <input 
         type="number" 
         step="0.1" 
@@ -67,13 +67,13 @@
         required
       >
       <small class="text-muted">
-        Enter the number of leave days allocated (default is 20 days).
+        {{ _("Enter the number of leave days allocated (default is 20 days).") }}
       </small>
     </div>
     
     <!-- Time-Off Balance (hours) - auto-calculated at 7.7 hours/day -->
     <div class="mb-3">
-      <label for="time_off_balance_hours" class="form-label">Time-Off Balance (hours)</label>
+      <label for="time_off_balance_hours" class="form-label">{{ _("Time-Off Balance (hours)") }}</label>
       <input 
         type="number" 
         step="0.1" 
@@ -84,13 +84,13 @@
         readonly
       >
       <small class="text-muted">
-        Automatically calculated as (days * 7.7).
+        {{ _("Automatically calculated as (days * 7.7).") }}
       </small>
     </div>
     
     <!-- Action Buttons -->
-    <button type="submit" class="btn btn-primary">Register</button>
-    <a href="{{ url_for('hr.dashboard') }}" class="btn btn-danger">Cancel</a>
+    <button type="submit" class="btn btn-primary">{{ _("Register") }}</button>
+    <a href="{{ url_for('hr.dashboard') }}" class="btn btn-danger">{{ _("Cancel") }}</a>
   </form>
 </div>
 
@@ -108,3 +108,4 @@
   });
 </script>
 {% endblock %}
+

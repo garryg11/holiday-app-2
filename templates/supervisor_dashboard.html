@@ -1,27 +1,27 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container">
-  <h2 class="mb-4">Supervisor Dashboard</h2>
-  <p>Welcome, {{ current_user.email }}! Here you can review and approve leave requests from your team.</p>
+  <h2 class="mb-4">{{ _("Supervisor Dashboard") }}</h2>
+  <p>{{ _("Welcome,") }} {{ current_user.email }}! {{ _("Here you can review and approve leave requests from your team.") }}</p>
   
   <div class="row">
     <!-- Pending Requests Card -->
     <div class="col-md-6">
       <div class="card shadow mb-4">
-        <div class="card-header">Pending Team Requests</div>
+        <div class="card-header">{{ _("Pending Team Requests") }}</div>
         <div class="card-body">
-          <p class="card-text">Review pending leave requests from your team members below.</p>
-          <a href="{{ url_for('main.approval_requests') }}" class="btn btn-primary">View Approval Requests</a>
+          <p class="card-text">{{ _("Review pending leave requests from your team members below.") }}</p>
+          <a href="{{ url_for('main.approval_requests') }}" class="btn btn-primary">{{ _("View Approval Requests") }}</a>
         </div>
       </div>
     </div>
     <!-- Team Calendar Card -->
     <div class="col-md-6">
       <div class="card shadow mb-4">
-        <div class="card-header">Team Calendar</div>
+        <div class="card-header">{{ _("Team Calendar") }}</div>
         <div class="card-body">
-          <p class="card-text">View your team's schedule and upcoming leaves.</p>
-          <a href="{{ url_for('main.calendar') }}" class="btn btn-secondary">View Calendar</a>
+          <p class="card-text">{{ _("View your team's schedule and upcoming leaves.") }}</p>
+          <a href="{{ url_for('main.calendar') }}" class="btn btn-secondary">{{ _("View Calendar") }}</a>
         </div>
       </div>
     </div>

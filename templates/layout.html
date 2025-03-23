@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ get_locale() }}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Holiday Approval App</title>
+    <title>{{ _("Holiday Approval App") }}</title>
     <!-- Bootstrap CSS -->
     <link 
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
@@ -20,11 +20,11 @@
         <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.calendar') }}">
           <img 
             src="{{ url_for('static', filename='img/logo.png') }}" 
-            alt="Company Logo" 
+            alt="{{ _('Company Logo') }}" 
             height="40" 
             class="me-2"
           >
-          <span>Holiday Approval App</span>
+          <span>{{ _("Holiday Approval App") }}</span>
         </a>
         
         <!-- Toggler for mobile view -->
@@ -35,7 +35,7 @@
           data-bs-target="#navbarSupportedContent" 
           aria-controls="navbarSupportedContent" 
           aria-expanded="false" 
-          aria-label="Toggle navigation"
+          aria-label="{{ _('Toggle navigation') }}"
         >
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -46,60 +46,60 @@
               <!-- Logged-in user info -->
               <li class="nav-item">
                 <span class="nav-link disabled">
-                  Logged in as: {{ current_user.email }}
+                  {{ _("Logged in as:") }} {{ current_user.email }}
                 </span>
               </li>
               
               <!-- Common Links -->
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.calendar') }}">Calendar</a>
+                <a class="nav-link" href="{{ url_for('main.calendar') }}">{{ _("Calendar") }}</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.export_reports') }}">Export Reports</a>
+                <a class="nav-link" href="{{ url_for('main.export_reports') }}">{{ _("Export Reports") }}</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('main.currently_on_leave') }}">Currently On Leave</a>
+                <a class="nav-link" href="{{ url_for('main.currently_on_leave') }}">{{ _("Currently On Leave") }}</a>
               </li>
               
               <!-- Role-Based Links -->
               {% if current_user.role == 'employee' %}
                 <li class="nav-item">
-                  <a class="nav-link" href="{{ url_for('main.new_holiday_request') }}">Request</a>
+                  <a class="nav-link" href="{{ url_for('main.new_holiday_request') }}">{{ _("Request") }}</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="{{ url_for('main.employee_dashboard') }}">Employee Dashboard</a>
+                  <a class="nav-link" href="{{ url_for('main.employee_dashboard') }}">{{ _("Employee Dashboard") }}</a>
                 </li>
               {% elif current_user.role == 'supervisor' %}
                 <li class="nav-item">
-                  <a class="nav-link" href="{{ url_for('main.supervisor_dashboard') }}">Supervisor Dashboard</a>
+                  <a class="nav-link" href="{{ url_for('main.supervisor_dashboard') }}">{{ _("Supervisor Dashboard") }}</a>
                 </li>
               {% elif current_user.role == 'manager' %}
                 <li class="nav-item">
-                  <a class="nav-link" href="{{ url_for('main.manager_dashboard') }}">Manager Dashboard</a>
+                  <a class="nav-link" href="{{ url_for('main.manager_dashboard') }}">{{ _("Manager Dashboard") }}</a>
                 </li>
               {% elif current_user.role == 'admin' %}
                 <li class="nav-item">
-                  <a class="nav-link" href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a>
+                  <a class="nav-link" href="{{ url_for('admin.dashboard') }}">{{ _("Admin Dashboard") }}</a>
                 </li>
               {% elif current_user.role == 'hr' %}
                 <li class="nav-item">
-                  <a class="nav-link" href="{{ url_for('hr.dashboard') }}">HR Dashboard</a>
+                  <a class="nav-link" href="{{ url_for('hr.dashboard') }}">{{ _("HR Dashboard") }}</a>
                 </li>
               {% elif current_user.role == 'management' %}
                 <!-- Management Dashboard Link -->
                 <li class="nav-item">
-                  <a class="nav-link" href="{{ url_for('main.management_dashboard') }}">Management Dashboard</a>
+                  <a class="nav-link" href="{{ url_for('main.management_dashboard') }}">{{ _("Management Dashboard") }}</a>
                 </li>
               {% endif %}
               
               <!-- Logout Link -->
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">{{ _("Logout") }}</a>
               </li>
             {% else %}
               <!-- Links for non-authenticated users -->
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                <a class="nav-link" href="{{ url_for('auth.login') }}">{{ _("Login") }}</a>
               </li>
             {% endif %}
           </ul>
@@ -115,7 +115,7 @@
           {% for category, message in messages %}
             <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
               {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ _('Close') }}"></button>
             </div>
           {% endfor %}
         {% endif %}
@@ -127,7 +127,7 @@
     <!-- Footer -->
     <footer class="bg-light text-center p-3">
       <div class="container">
-        <p>&copy; 2025 Holiday Approval App</p>
+        <p>&copy; 2025 {{ _("Holiday Approval App") }}</p>
       </div>
     </footer>
     

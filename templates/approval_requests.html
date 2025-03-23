@@ -1,17 +1,17 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container">
-  <h2>Pending Holiday Requests for Approval</h2>
+  <h2>{{ _("Pending Holiday Requests for Approval") }}</h2>
   {% if requests %}
     <table class="table table-bordered">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>User</th>
-          <th>Start Date</th>
-          <th>End Date</th>
-          <th>Type</th>
-          <th>Actions</th>
+          <th>{{ _("ID") }}</th>
+          <th>{{ _("User") }}</th>
+          <th>{{ _("Start Date") }}</th>
+          <th>{{ _("End Date") }}</th>
+          <th>{{ _("Type") }}</th>
+          <th>{{ _("Actions") }}</th>
         </tr>
       </thead>
       <tbody>
@@ -21,17 +21,17 @@
           <td>{{ req.user.email }}</td>
           <td>{{ req.start_date.strftime('%Y-%m-%d') }}</td>
           <td>{{ req.end_date.strftime('%Y-%m-%d') }}</td>
-          <td>{{ req.request_type }}</td>
+          <td>{{ _(req.request_type) }}</td>
           <td>
-            <a href="{{ url_for('main.update_request', request_id=req.id, action='approve') }}" class="btn btn-success btn-sm">Approve</a>
-            <a href="{{ url_for('main.update_request', request_id=req.id, action='reject') }}" class="btn btn-danger btn-sm">Reject</a>
+            <a href="{{ url_for('main.update_request', request_id=req.id, action='approve') }}" class="btn btn-success btn-sm">{{ _("Approve") }}</a>
+            <a href="{{ url_for('main.update_request', request_id=req.id, action='reject') }}" class="btn btn-danger btn-sm">{{ _("Reject") }}</a>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   {% else %}
-    <p>No pending requests found.</p>
+    <p>{{ _("No pending requests found.") }}</p>
   {% endif %}
 </div>
 {% endblock %}

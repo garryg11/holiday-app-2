@@ -1,13 +1,13 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container py-4">
-  <h2 class="mb-4">HR Dashboard</h2>
+  <h2 class="mb-4">{{ _("HR Dashboard") }}</h2>
   
   <!-- Metrics Cards -->
   <div class="row mb-4">
     <div class="col-md-3">
       <div class="card shadow">
-        <div class="card-header text-center">Total Employees</div>
+        <div class="card-header text-center">{{ _("Total Employees") }}</div>
         <div class="card-body text-center">
           <h5 class="card-title">{{ total_employees }}</h5>
         </div>
@@ -15,7 +15,7 @@
     </div>
     <div class="col-md-3">
       <div class="card shadow">
-        <div class="card-header text-center">Total Holiday Requests</div>
+        <div class="card-header text-center">{{ _("Total Holiday Requests") }}</div>
         <div class="card-body text-center">
           <h5 class="card-title">{{ total_requests }}</h5>
         </div>
@@ -23,7 +23,7 @@
     </div>
     <div class="col-md-3">
       <div class="card shadow">
-        <div class="card-header text-center">Approved Requests</div>
+        <div class="card-header text-center">{{ _("Approved Requests") }}</div>
         <div class="card-body text-center">
           <h5 class="card-title">{{ approved_requests }}</h5>
         </div>
@@ -31,7 +31,7 @@
     </div>
     <div class="col-md-3">
       <div class="card shadow">
-        <div class="card-header text-center">Pending Requests</div>
+        <div class="card-header text-center">{{ _("Pending Requests") }}</div>
         <div class="card-body text-center">
           <h5 class="card-title">{{ pending_requests }}</h5>
         </div>
@@ -41,31 +41,31 @@
   
   <!-- Register New User Button -->
   <div class="mb-4">
-    <a href="{{ url_for('hr.register') }}" class="btn btn-primary">Register New User</a>
+    <a href="{{ url_for('hr.register') }}" class="btn btn-primary">{{ _("Register New User") }}</a>
   </div>
   
   <!-- Search and Filter Form with Clear Search Button -->
   <form method="GET" action="{{ url_for('hr.dashboard') }}" class="mb-4">
     <div class="input-group">
-      <input type="text" class="form-control" name="search" placeholder="Search by name or email" value="{{ request.args.get('search', '') }}">
-      <button class="btn btn-outline-secondary" type="submit">Search</button>
+      <input type="text" class="form-control" name="search" placeholder="{{ _('Search by name or email') }}" value="{{ request.args.get('search', '') }}">
+      <button class="btn btn-outline-secondary" type="submit">{{ _("Search") }}</button>
       <!-- Clear Search button resets the query parameters -->
-      <a href="{{ url_for('hr.dashboard') }}" class="btn btn-outline-secondary">Clear Search</a>
+      <a href="{{ url_for('hr.dashboard') }}" class="btn btn-outline-secondary">{{ _("Clear Search") }}</a>
     </div>
   </form>
   
   <!-- User Activation/Deactivation Table -->
   <div class="card shadow mb-4">
-    <div class="card-header">User Activation/Deactivation</div>
+    <div class="card-header">{{ _("User Activation/Deactivation") }}</div>
     <div class="card-body p-0">
       <table class="table table-hover mb-0">
         <thead class="table-light">
           <tr>
-            <th>User ID</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Active</th>
-            <th class="text-center">Action</th>
+            <th>{{ _("User ID") }}</th>
+            <th>{{ _("Email") }}</th>
+            <th>{{ _("Role") }}</th>
+            <th>{{ _("Active") }}</th>
+            <th class="text-center">{{ _("Action") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -76,14 +76,14 @@
             <td>{{ user.role }}</td>
             <td>
               {% if user.active %}
-                <span class="badge bg-success">Active</span>
+                <span class="badge bg-success">{{ _("Active") }}</span>
               {% else %}
-                <span class="badge bg-danger">Inactive</span>
+                <span class="badge bg-danger">{{ _("Inactive") }}</span>
               {% endif %}
             </td>
             <td class="text-center">
               <form action="{{ url_for('hr.toggle_user', user_id=user.id) }}" method="POST" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-secondary">Toggle</button>
+                <button type="submit" class="btn btn-sm btn-secondary">{{ _("Toggle") }}</button>
               </form>
             </td>
           </tr>
@@ -94,14 +94,14 @@
   </div>
   
   <!-- Pagination Controls -->
-  <nav aria-label="Employee pagination">
+  <nav aria-label="{{ _('Employee pagination') }}">
     <ul class="pagination justify-content-center">
       {% if employees.has_prev %}
         <li class="page-item">
-          <a class="page-link" href="{{ url_for('hr.dashboard', page=employees.prev_num, search=request.args.get('search', '')) }}">Previous</a>
+          <a class="page-link" href="{{ url_for('hr.dashboard', page=employees.prev_num, search=request.args.get('search', '')) }}">{{ _("Previous") }}</a>
         </li>
       {% else %}
-        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        <li class="page-item disabled"><span class="page-link">{{ _("Previous") }}</span></li>
       {% endif %}
       
       {% for p in employees.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
@@ -120,28 +120,28 @@
       
       {% if employees.has_next %}
         <li class="page-item">
-          <a class="page-link" href="{{ url_for('hr.dashboard', page=employees.next_num, search=request.args.get('search', '')) }}">Next</a>
+          <a class="page-link" href="{{ url_for('hr.dashboard', page=employees.next_num, search=request.args.get('search', '')) }}">{{ _("Next") }}</a>
         </li>
       {% else %}
-        <li class="page-item disabled"><span class="page-link">Next</span></li>
+        <li class="page-item disabled"><span class="page-link">{{ _("Next") }}</span></li>
       {% endif %}
     </ul>
   </nav>
   
   <!-- Employee Leave Balances Table -->
   <div class="card shadow mb-4">
-    <div class="card-header">Employee Leave Balances</div>
+    <div class="card-header">{{ _("Employee Leave Balances") }}</div>
     <div class="card-body p-0">
       <table class="table table-hover mb-0">
         <thead class="table-light">
           <tr>
-            <th>User ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Total Leave (days)</th>
-            <th>Used Leave (days)</th>
-            <th>Remaining Leave (days)</th>
-            <th>Usage Progress</th>
+            <th>{{ _("User ID") }}</th>
+            <th>{{ _("Name") }}</th>
+            <th>{{ _("Email") }}</th>
+            <th>{{ _("Total Leave (days)") }}</th>
+            <th>{{ _("Used Leave (days)") }}</th>
+            <th>{{ _("Remaining Leave (days)") }}</th>
+            <th>{{ _("Usage Progress") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -173,7 +173,7 @@
   
   <!-- Integration Management Link -->
   <div class="mb-4 text-center">
-    <a href="{{ url_for('hr.integrations') }}" class="btn btn-primary">HRIS/Payroll Integration</a>
+    <a href="{{ url_for('hr.integrations') }}" class="btn btn-primary">{{ _("HRIS/Payroll Integration") }}</a>
   </div>
 </div>
 {% endblock %}

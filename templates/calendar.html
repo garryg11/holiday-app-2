@@ -1,25 +1,25 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container py-4">
-  <h2>Leave Calendar</h2>
+  <h2>{{ _("Leave Calendar") }}</h2>
   
   <!-- AI-powered leave suggestion -->
-  <p><strong>AI-Powered Suggestion:</strong> {{ suggestion }}</p>
+  <p><strong>{{ _("AI-Powered Suggestion:") }}</strong> {{ suggestion }}</p>
   
   <!-- Display available balance for employees -->
   {% if current_user.role == 'employee' %}
-    <p><strong>Available Balance:</strong> {{ current_user.time_off_balance }} days</p>
+    <p><strong>{{ _("Available Balance:") }}</strong> {{ current_user.time_off_balance }} {{ _("days") }}</p>
   {% endif %}
   
   <!-- Filter Section -->
   <div class="mb-3">
-    <label for="filterType" class="form-label">Filter by Request Type:</label>
+    <label for="filterType" class="form-label">{{ _("Filter by Request Type:") }}</label>
     <select id="filterType" class="form-select" style="width: auto;">
-      <option value="all">All</option>
-      <option value="vacation">Vacation</option>
-      <option value="sick leave">Sick Leave</option>
-      <option value="time compensation">Time Compensation</option>
-      <option value="personal leave">Personal Leave</option>
+      <option value="all">{{ _("All") }}</option>
+      <option value="vacation">{{ _("Vacation") }}</option>
+      <option value="sick leave">{{ _("Sick Leave") }}</option>
+      <option value="time compensation">{{ _("Time Compensation") }}</option>
+      <option value="personal leave">{{ _("Personal Leave") }}</option>
     </select>
   </div>
   
@@ -27,7 +27,7 @@
   <div class="mb-3">
     <div class="form-check form-switch">
       <input class="form-check-input" type="checkbox" id="sortOrderToggle" checked>
-      <label class="form-check-label" for="sortOrderToggle">Sort Newest First</label>
+      <label class="form-check-label" for="sortOrderToggle">{{ _("Sort Newest First") }}</label>
     </div>
   </div>
   
@@ -80,7 +80,7 @@
       // Configure the List view to sort events based on the toggle value.
       views: {
         listWeek: {
-          buttonText: 'List',
+          buttonText: '{{ _("List") }}',
           eventOrder: function(a, b) {
             if (listOrderDesc) {
               // Newest first: sort descending by start date.
@@ -97,13 +97,13 @@
       slotMaxTime: '18:00:00',
       nowIndicator: true,
       allDaySlot: true,
-      allDayText: 'All Day',
+      allDayText: '{{ _("All Day") }}',
       
       events: fetchEvents,
       
       eventClick: function(info) {
         info.jsEvent.preventDefault();
-        alert('Event: ' + info.event.title + '\nStart: ' + info.event.start.toLocaleDateString());
+        alert('{{ _("Event:") }} ' + info.event.title + '\n{{ _("Start:") }} ' + info.event.start.toLocaleDateString());
       }
     });
     

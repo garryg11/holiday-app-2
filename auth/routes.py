@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from models import User
 from extensions import db, mail
 from flask_mail import Message
+from flask_babel import _  # <-- Import the translation function
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -24,7 +25,7 @@ def login():
             else:
                 return redirect(url_for('main.calendar'))
         else:
-            flash("Invalid email or password.", "danger")
+            flash(_("Invalid email or password."), "danger")
     return render_template('login.html')
 
 @auth_bp.route('/reset_password', methods=['GET', 'POST'])
@@ -35,17 +36,17 @@ def reset_password():
         # Token-based password reset (user clicked link in their email)
         user = User.verify_reset_token(token)
         if not user:
-            flash("Invalid or expired token.", "danger")
+            flash(_("Invalid or expired token."), "danger")
             return redirect(url_for('auth.login'))
         if request.method == 'POST':
             new_password = request.form.get('password')
             confirm_password = request.form.get('confirm_password')
             if new_password != confirm_password:
-                flash("Passwords do not match.", "danger")
+                flash(_("Passwords do not match."), "danger")
                 return render_template('auth_reset_password.html', token=token)
             user.set_password(new_password)
             db.session.commit()
-            flash("Your password has been updated. Please log in.", "success")
+            flash(_("Your password has been updated. Please log in."), "success")
             return redirect(url_for('auth.login'))
         return render_template('auth_reset_password.html', token=token)
     else:
@@ -57,14 +58,14 @@ def reset_password():
                 new_password = request.form.get('new_password')
                 confirm_password = request.form.get('confirm_password')
                 if not current_user.check_password(current_password):
-                    flash("Current password is incorrect.", "danger")
+                    flash(_("Current password is incorrect."), "danger")
                     return render_template('auth_reset_password.html')
                 if new_password != confirm_password:
-                    flash("New passwords do not match.", "danger")
+                    flash(_("New passwords do not match."), "danger")
                     return render_template('auth_reset_password.html')
                 current_user.set_password(new_password)
                 db.session.commit()
-                flash("Your password has been updated.", "success")
+                flash(_("Your password has been updated."), "success")
                 return redirect(url_for('main.home'))
             return render_template('auth_reset_password.html')
         else:
@@ -75,23 +76,25 @@ def reset_password():
                 if user:
                     token = user.get_reset_token()
                     reset_link = url_for('auth.reset_password', token=token, _external=True)
-                    msg = Message("Password Reset Request",
-                                  sender=current_app.config['MAIL_DEFAULT_SENDER'],
-                                  recipients=[user.email])
-                    msg.body = f"""To reset your password, visit the following link:
-{reset_link}
-
-If you did not make this request, please ignore this email.
-"""
+                    msg = Message(
+                        _("Password Reset Request"),  # Subject is also translatable
+                        sender=current_app.config['MAIL_DEFAULT_SENDER'],
+                        recipients=[user.email]
+                    )
+                    msg.body = _(
+                        "To reset your password, visit the following link:\n"
+                        "{reset_link}\n\n"
+                        "If you did not make this request, please ignore this email."
+                    ).format(reset_link=reset_link)
                     mail.send(msg)
-                    flash("An email has been sent with instructions to reset your password.", "info")
+                    flash(_("An email has been sent with instructions to reset your password."), "info")
                 else:
-                    flash("No account found with that email.", "danger")
+                    flash(_("No account found with that email."), "danger")
             return render_template('auth_reset_password_request.html')
 
 @auth_bp.route('/logout')
 @login_required
 def logout():
     logout_user()
-    flash("You have been logged out.", "info")
+    flash(_("You have been logged out."), "info")
     return redirect(url_for('auth.login'))
